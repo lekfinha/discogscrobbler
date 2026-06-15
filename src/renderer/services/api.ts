@@ -351,7 +351,14 @@ class ApiService {
       releaseId: number;
       artist: string;
       album: string;
-    }
+    },
+    onProgress?: (progress: {
+      current: number;
+      total: number;
+      success: number;
+      failed: number;
+      ignored: number;
+    }) => void
   ): Promise<{
     success: number;
     failed: number;
@@ -368,10 +375,42 @@ class ApiService {
         collectionRelease,
       },
       {
-        timeout: 300000, // 5 minutes — each track can take 10s+ with Last.fm retries
+        timeout: 30000,
       }
     );
-    return response.data.data.results;
+
+    const sessionId = response.data.data.sessionId;
+
+    return new Promise((resolve, reject) => {
+      const pollInterval = setInterval(async () => {
+        try {
+          const progressRes = await this.getScrobbleProgress(sessionId);
+          if (!progressRes) return;
+
+          if (progressRes.progress && onProgress) {
+            onProgress(progressRes.progress);
+          }
+
+          if (
+            progressRes.status === 'completed' ||
+            progressRes.status === 'failed'
+          ) {
+            clearInterval(pollInterval);
+            resolve({
+              success: progressRes.progress?.success || 0,
+              failed: progressRes.progress?.failed || 0,
+              ignored: progressRes.progress?.ignored || 0,
+              errors: progressRes.error ? [progressRes.error] : [],
+              failedTracks: [], // we don't have failedTracks directly in progressRes
+              sessionId,
+            });
+          }
+        } catch (err) {
+          clearInterval(pollInterval);
+          reject(err);
+        }
+      }, 1000);
+    });
   }
 
   async getScrobbleProgress(sessionId: string): Promise<{

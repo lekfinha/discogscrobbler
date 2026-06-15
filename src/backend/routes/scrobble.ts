@@ -127,101 +127,112 @@ export default function createScrobbleRouter(
           track.timestamp || currentTime - (tracks.length - index - 1) * 180, // 3 minutes apart
       }));
 
-      const results = await lastfmService.scrobbleBatch(tracksWithTimestamps);
+      const sessionId = authService.generateNonce();
 
-      // Trigger incremental sync after successful scrobble
-      // Delay to give Last.fm time to index the scrobbles before we fetch them back
-      if (results.success > 0 && scrobbleHistorySyncService) {
-        // Adjust sync timestamp for backdated scrobbles (e.g., memory scrobbles)
-        // so the incremental sync picks them up
-        const earliestTimestamp = Math.min(
-          ...tracksWithTimestamps.map(t => t.timestamp)
-        );
-        await scrobbleHistorySyncService
-          .adjustSyncTimestampForBackdatedScrobbles(earliestTimestamp)
-          .catch(err => logger.error('Failed to adjust sync timestamp:', err));
+      lastfmService
+        .scrobbleBatch(tracksWithTimestamps, sessionId)
+        .then(async results => {
+          // Trigger incremental sync after successful scrobble
+          // Delay to give Last.fm time to index the scrobbles before we fetch them back
+          if (results.success > 0 && scrobbleHistorySyncService) {
+            // Adjust sync timestamp for backdated scrobbles (e.g., memory scrobbles)
+            // so the incremental sync picks them up
+            const earliestTimestamp = Math.min(
+              ...tracksWithTimestamps.map(t => t.timestamp)
+            );
+            await scrobbleHistorySyncService
+              .adjustSyncTimestampForBackdatedScrobbles(earliestTimestamp)
+              .catch(err =>
+                logger.error('Failed to adjust sync timestamp:', err)
+              );
 
-        const jobId = jobStatusService.startJob(
-          'sync',
-          'Syncing scrobble history...'
-        );
-        new Promise(resolve => setTimeout(resolve, 5000))
-          .then(() => scrobbleHistorySyncService.startIncrementalSync())
-          .then(() =>
-            jobStatusService.completeJob(jobId, 'Scrobble history synced')
-          )
-          .catch(err => {
-            logger.error('Failed to auto-sync after scrobble:', err);
-            jobStatusService.failJob(jobId, 'Failed to sync scrobble history');
-          });
-      }
-
-      // Auto-create album mappings for tracks where artist differs from collection artist
-      // This handles Various Artists compilations and artist name variations
-      if (
-        results.success > 0 &&
-        mappingService &&
-        collectionRelease?.artist &&
-        collectionRelease?.album
-      ) {
-        const collectionArtistNormalized = collectionRelease.artist
-          .toLowerCase()
-          .trim();
-
-        // Collect unique track artists that differ from collection artist
-        const uniqueTrackArtists = new Set<string>();
-        for (const track of tracksWithTimestamps) {
-          const trackArtistNormalized = track.artist.toLowerCase().trim();
-          if (trackArtistNormalized !== collectionArtistNormalized) {
-            uniqueTrackArtists.add(track.artist);
+            const jobId = jobStatusService.startJob(
+              'sync',
+              'Syncing scrobble history...'
+            );
+            new Promise(resolve => setTimeout(resolve, 5000))
+              .then(() => scrobbleHistorySyncService.startIncrementalSync())
+              .then(() =>
+                jobStatusService.completeJob(jobId, 'Scrobble history synced')
+              )
+              .catch(err => {
+                logger.error('Failed to auto-sync after scrobble:', err);
+                jobStatusService.failJob(
+                  jobId,
+                  'Failed to sync scrobble history'
+                );
+              });
           }
-        }
 
-        // Create mappings for each unique artist (fire and forget)
-        if (uniqueTrackArtists.size > 0) {
-          const mappingPromises = Array.from(uniqueTrackArtists).map(
-            async trackArtist => {
-              try {
-                // Check if mapping already exists
-                const existingMapping = await mappingService.getAlbumMapping(
-                  trackArtist,
-                  collectionRelease.album
-                );
+          // Auto-create album mappings for tracks where artist differs from collection artist
+          // This handles Various Artists compilations and artist name variations
+          if (
+            results.success > 0 &&
+            mappingService &&
+            collectionRelease?.artist &&
+            collectionRelease?.album
+          ) {
+            const collectionArtistNormalized = collectionRelease.artist
+              .toLowerCase()
+              .trim();
 
-                if (!existingMapping) {
-                  await mappingService.addAlbumMapping({
-                    historyArtist: trackArtist,
-                    historyAlbum: collectionRelease.album,
-                    collectionId: collectionRelease.releaseId || 0,
-                    collectionArtist: collectionRelease.artist,
-                    collectionAlbum: collectionRelease.album,
-                  });
-                  logger.info(
-                    `Auto-created album mapping: "${trackArtist} - ${collectionRelease.album}" -> "${collectionRelease.artist} - ${collectionRelease.album}"`
-                  );
-                }
-              } catch (err) {
-                logger.warn(
-                  `Failed to create auto-mapping for "${trackArtist}": ${err}`
-                );
+            // Collect unique track artists that differ from collection artist
+            const uniqueTrackArtists = new Set<string>();
+            for (const track of tracksWithTimestamps) {
+              const trackArtistNormalized = track.artist.toLowerCase().trim();
+              if (trackArtistNormalized !== collectionArtistNormalized) {
+                uniqueTrackArtists.add(track.artist);
               }
             }
-          );
 
-          // Fire and forget - don't block response
-          Promise.all(mappingPromises).catch(err =>
-            logger.error('Failed to create auto-mappings:', err)
-          );
-        }
-      }
+            // Create mappings for each unique artist (fire and forget)
+            if (uniqueTrackArtists.size > 0) {
+              const mappingPromises = Array.from(uniqueTrackArtists).map(
+                async trackArtist => {
+                  try {
+                    // Check if mapping already exists
+                    const existingMapping =
+                      await mappingService.getAlbumMapping(
+                        trackArtist,
+                        collectionRelease.album
+                      );
+
+                    if (!existingMapping) {
+                      await mappingService.addAlbumMapping({
+                        historyArtist: trackArtist,
+                        historyAlbum: collectionRelease.album,
+                        collectionId: collectionRelease.releaseId || 0,
+                        collectionArtist: collectionRelease.artist,
+                        collectionAlbum: collectionRelease.album,
+                      });
+                      logger.info(
+                        `Auto-created album mapping: "${trackArtist} - ${collectionRelease.album}" -> "${collectionRelease.artist} - ${collectionRelease.album}"`
+                      );
+                    }
+                  } catch (err) {
+                    logger.warn(
+                      `Failed to create auto-mapping for "${trackArtist}": ${err}`
+                    );
+                  }
+                }
+              );
+
+              // Fire and forget - don't block response
+              Promise.all(mappingPromises).catch(err =>
+                logger.error('Failed to create auto-mappings:', err)
+              );
+            }
+          }
+        })
+        .catch(err => {
+          logger.error('Background batch scrobble failed:', err);
+        });
 
       res.json({
         success: true,
         data: {
-          message: `Scrobbled ${results.success} tracks successfully`,
-          results,
-          tracks: tracksWithTimestamps,
-          sessionId: results.sessionId,
+          message: `Scrobble batch started`,
+          sessionId,
         },
       });
     } catch (error) {

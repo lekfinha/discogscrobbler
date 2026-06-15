@@ -271,7 +271,18 @@ const ScrobblePage: React.FC = () => {
 
       setProgress(prev => (prev ? { ...prev, status: 'scrobbling' } : null));
 
-      const result = await api.scrobbleBatch(tracksToScrobble, baseTimestamp);
+      const result = await api.scrobbleBatch(
+        tracksToScrobble,
+        baseTimestamp,
+        undefined,
+        progress => {
+          setProgress(prev =>
+            prev
+              ? { ...prev, current: progress.current, total: progress.total }
+              : null
+          );
+        }
+      );
 
       setProgress(prev =>
         prev ? { ...prev, status: 'completed', current: prev.total } : null

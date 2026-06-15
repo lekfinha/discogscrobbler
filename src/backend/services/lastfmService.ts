@@ -301,7 +301,10 @@ export class LastFmService {
     }
   }
 
-  async scrobbleBatch(tracks: ScrobbleTrack[]): Promise<{
+  async scrobbleBatch(
+    tracks: ScrobbleTrack[],
+    providedSessionId?: string
+  ): Promise<{
     success: number;
     failed: number;
     ignored: number;
@@ -319,7 +322,7 @@ export class LastFmService {
 
     // Create scrobble session
     const session: ScrobbleSession = {
-      id: this.authService.generateNonce(),
+      id: providedSessionId || this.authService.generateNonce(),
       tracks,
       timestamp: Date.now(),
       status: 'pending',
