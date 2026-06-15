@@ -158,7 +158,7 @@ export class SellerMonitoringService {
    * Get OAuth headers for authenticated requests
    */
   private async getAuthHeaders(): Promise<Record<string, string>> {
-    const token = await this.authService.getDiscogsToken();
+    const token = await this.authService.getDiscogsUsername();
 
     if (!token) {
       throw new Error('No Discogs token available. Please authenticate first.');

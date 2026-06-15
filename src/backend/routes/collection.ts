@@ -31,7 +31,7 @@ export default function createCollectionRouter(
       }
 
       // Check authentication first
-      const token = await authService.getDiscogsToken();
+      const token = await authService.getDiscogsUsername();
       if (!token) {
         return res.status(500).json({
           success: false,
@@ -236,7 +236,7 @@ export default function createCollectionRouter(
       }
 
       // Check authentication first
-      const token = await authService.getDiscogsToken();
+      const token = await authService.getDiscogsUsername();
       if (!token) {
         return res.status(500).json({
           success: false,
@@ -286,7 +286,7 @@ export default function createCollectionRouter(
         }
 
         // Check authentication first
-        const token = await authService.getDiscogsToken();
+        const token = await authService.getDiscogsUsername();
         if (!token) {
           return res.status(500).json({
             success: false,
@@ -373,7 +373,7 @@ export default function createCollectionRouter(
   router.get('/release/:releaseId', async (req: Request, res: Response) => {
     try {
       // Check authentication first
-      const token = await authService.getDiscogsToken();
+      const token = await authService.getDiscogsUsername();
       if (!token) {
         return res.status(500).json({
           success: false,
@@ -469,7 +469,7 @@ export default function createCollectionRouter(
       }
 
       // Check authentication first
-      const token = await authService.getDiscogsToken();
+      const token = await authService.getDiscogsUsername();
       if (!token) {
         return res.status(500).json({
           success: false,

@@ -31,7 +31,7 @@ export function createAuthRouter(
         success: true,
         data: {
           discogs: {
-            authenticated: !!settings.discogs.token,
+            authenticated: !!settings.discogs.username,
             username: settings.discogs.username,
           },
           lastfm: {
@@ -50,125 +50,38 @@ export function createAuthRouter(
     }
   });
 
-  // Discogs OAuth authentication - Get auth URL
-  router.get('/discogs/auth-url', async (req: Request, res: Response) => {
+  // Set Discogs Username
+  router.post('/discogs/username', async (req: Request, res: Response) => {
     try {
-      const authUrl = await discogsService.getAuthUrl();
+      const { username } = req.body;
 
-      res.json({
-        success: true,
-        data: { authUrl },
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : 'Failed to get Discogs auth URL',
-      });
-    }
-  });
-
-  // Discogs OAuth callback
-  router.get('/discogs/callback', async (req: Request, res: Response) => {
-    try {
-      logger.info('Discogs OAuth callback received');
-      const { oauth_token, oauth_verifier } = req.query;
-
-      if (!oauth_token || !oauth_verifier) {
-        logger.warn('Missing OAuth parameters in callback');
-        return res.status(400).send(`
-        <html><body>
-          <h2>Authentication Error</h2>
-          <p>Missing required OAuth parameters for authentication.</p>
-          <script>window.close();</script>
-        </body></html>
-      `);
-      }
-
-      logger.debug('Processing OAuth callback');
-      const result = await discogsService.handleCallback(
-        oauth_token as string,
-        oauth_verifier as string
-      );
-      logger.info('Discogs OAuth callback successful', {
-        username: result.username,
-      });
-
-      res.send(`
-      <html><body>
-        <h2>Discogs Authentication Successful!</h2>
-        <p>Authentication completed successfully! You can now close this window.</p>
-        <script>
-          localStorage.setItem('discogs_auth_success', 'true');
-          window.close();
-        </script>
-      </body></html>
-    `);
-    } catch (error) {
-      logger.error('Discogs OAuth callback error', error);
-      res.status(500).send(`
-      <html><body>
-        <h2>Authentication Error</h2>
-        <p>${error instanceof Error ? error.message : 'Unknown error'}</p>
-        <script>window.close();</script>
-      </body></html>
-    `);
-    }
-  });
-
-  // Discogs authentication - Personal Access Token (legacy)
-  router.post('/discogs/token', async (req: Request, res: Response) => {
-    try {
-      const { token, username } = req.body;
-
-      if (!token) {
+      if (!username) {
         return res.status(400).json({
           success: false,
-          error: 'Token is required',
+          error: 'Username is required',
         });
       }
 
-      // Validate token format
-      if (!token.startsWith('Discogs token=')) {
-        return res.status(400).json({
+      // Verify username exists by fetching profile
+      const profile = await discogsService.getUserProfile(username);
+
+      if (!profile || !profile.username) {
+        return res.status(404).json({
           success: false,
-          error: 'Invalid token format. Should start with "Discogs token="',
+          error: 'Discogs user not found',
         });
       }
 
-      await authService.setDiscogsToken(token, username);
+      await authService.setDiscogsCredentials(username);
 
       res.json({
         success: true,
-        data: { message: 'Discogs token saved successfully' },
+        data: { message: 'Discogs username saved successfully' },
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  });
-
-  // Test Discogs connection
-  router.get('/discogs/test', async (req: Request, res: Response) => {
-    try {
-      const profile = await discogsService.getUserProfile();
-
-      res.json({
-        success: true,
-        data: {
-          username: profile.username,
-          id: profile.id,
-          resource_url: profile.resource_url,
-        },
-      });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Authentication failed',
       });
     }
   });

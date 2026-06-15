@@ -1,7 +1,4 @@
-import crypto from 'crypto';
-
 import { AxiosInstance } from 'axios';
-import OAuth from 'oauth-1.0a';
 
 import {
   CollectionItem,
@@ -17,7 +14,6 @@ import {
   ApiResponse,
   TimestampedCache,
 } from '../../shared/types';
-import { safeJsonParse } from '../../shared/utils/safeJsonParse';
 import { getDiscogsAxios } from '../utils/discogsAxios';
 import { FileStorage } from '../utils/fileStorage';
 import { createLogger } from '../utils/logger';
@@ -28,7 +24,6 @@ export class DiscogsService {
   private axios: AxiosInstance;
   private fileStorage: FileStorage;
   private authService: AuthService;
-  private oauth: OAuth;
   private baseUrl = 'https://api.discogs.com';
   private logger = createLogger('DiscogsService');
 
@@ -38,255 +33,26 @@ export class DiscogsService {
   constructor(fileStorage: FileStorage, authService: AuthService) {
     this.fileStorage = fileStorage;
     this.authService = authService;
-
-    this.oauth = new OAuth({
-      consumer: {
-        key: process.env.DISCOGS_CLIENT_ID || '',
-        secret: process.env.DISCOGS_CLIENT_SECRET || '',
-      },
-      signature_method: 'HMAC-SHA1',
-      hash_function(base_string, key) {
-        return crypto
-          .createHmac('sha1', key)
-          .update(base_string)
-          .digest('base64');
-      },
-    });
-
     this.axios = getDiscogsAxios();
   }
 
-  async getAuthUrl(): Promise<string> {
-    this.logger.info('Starting Discogs OAuth flow');
-
-    // Check credentials
-    const clientId = process.env.DISCOGS_CLIENT_ID;
-    const clientSecret = process.env.DISCOGS_CLIENT_SECRET;
-    this.logger.debug('Discogs credentials check', {
-      clientId: clientId ? 'present' : 'missing',
-      clientSecret: clientSecret ? 'present' : 'missing',
-    });
-
-    // Step 1: Get request token
-    const requestData = {
-      url: `${this.baseUrl}/oauth/request_token`,
-      method: 'GET',
-    };
-
-    this.logger.debug('Initiating OAuth request token flow');
-    const authHeader = this.oauth.toHeader(this.oauth.authorize(requestData));
-    // Note: authHeader contains sensitive OAuth data and is not logged
-
-    try {
-      const response = await this.axios.get('/oauth/request_token', {
-        headers: authHeader as unknown as Record<string, string>,
-      });
-
-      // Parse the response (should be in format: oauth_token=...&oauth_token_secret=...)
-      const params = new URLSearchParams(response.data);
-      const oauthToken = params.get('oauth_token');
-      const oauthTokenSecret = params.get('oauth_token_secret');
-
-      this.logger.debug('OAuth tokens received', {
-        oauthToken: oauthToken ? 'present' : 'missing',
-        oauthTokenSecret: oauthTokenSecret ? 'present' : 'missing',
-      });
-
-      if (!oauthToken || !oauthTokenSecret) {
-        throw new Error('Failed to get OAuth request token');
-      }
-
-      // Store the token secret temporarily (needed for the callback)
-      await this.authService.storeOAuthTokenSecret(oauthTokenSecret);
-      this.logger.debug('OAuth token secret stored for callback');
-
-      // Return the authorization URL
-      const backendPort =
-        process.env.BACKEND_PORT || process.env.PORT || '3001';
-      const callbackUrl =
-        process.env.DISCOGS_CALLBACK_URL ||
-        `http://localhost:${backendPort}/api/v1/auth/discogs/callback`;
-
-      // Include the callback URL in the authorization URL
-      const authUrl = `https://discogs.com/oauth/authorize?oauth_token=${oauthToken}&oauth_callback=${encodeURIComponent(callbackUrl)}`;
-      this.logger.debug('OAuth authorization URL generated');
-      this.logger.debug('Callback URL configured', { callbackUrl });
-
-      return authUrl;
-    } catch (error) {
-      this.logger.error('Discogs OAuth error', error);
-      if (error instanceof Error && 'response' in error) {
-        const axiosError = error as {
-          response?: { status: number; statusText: string };
-        };
-        if (axiosError.response) {
-          this.logger.error('OAuth request failed', {
-            status: axiosError.response.status,
-            statusText: axiosError.response.statusText,
-          });
-        }
-      }
-      throw new Error('Failed to initiate Discogs OAuth flow');
-    }
-  }
-
-  async handleCallback(
-    oauthToken: string,
-    oauthVerifier: string
-  ): Promise<{ username: string }> {
-    try {
-      // Get the stored token secret
-      const tokenSecret = await this.authService.getOAuthTokenSecret();
-      if (!tokenSecret) {
-        throw new Error(
-          'OAuth token secret not found. Please restart the authentication flow.'
-        );
-      }
-
-      // Step 2: Exchange for access token
-      const requestData = {
-        url: `${this.baseUrl}/oauth/access_token`,
-        method: 'POST',
-      };
-
-      const token = {
-        key: oauthToken,
-        secret: tokenSecret,
-      };
-
-      const authHeader = this.oauth.toHeader(
-        this.oauth.authorize(requestData, token)
-      );
-
-      const response = await this.axios.post('/oauth/access_token', null, {
-        headers: authHeader as unknown as Record<string, string>,
-        params: {
-          oauth_verifier: oauthVerifier,
-        },
-      });
-
-      // Parse access token response
-      const params = new URLSearchParams(response.data);
-      const accessToken = params.get('oauth_token');
-      const accessTokenSecret = params.get('oauth_token_secret');
-
-      if (!accessToken || !accessTokenSecret) {
-        throw new Error('Failed to get OAuth access token');
-      }
-
-      // Store the access token
-      const tokenData = JSON.stringify({
-        key: accessToken,
-        secret: accessTokenSecret,
-      });
-
-      // Get user profile to get username
-      const userProfile = await this.getUserProfileWithToken({
-        key: accessToken,
-        secret: accessTokenSecret,
-      });
-
-      // Save the token and username
-      await this.authService.setDiscogsToken(tokenData, userProfile.username);
-
-      // Clean up temporary token secret
-      await this.authService.clearOAuthTokenSecret();
-
-      return { username: userProfile.username };
-    } catch (error) {
-      this.logger.error('Discogs OAuth callback error', error);
-      throw new Error('Failed to complete Discogs OAuth flow');
-    }
-  }
-
-  private async getUserProfileWithToken(token: {
-    key: string;
-    secret: string;
-  }): Promise<DiscogsUserIdentity> {
-    const requestData = {
-      url: `${this.baseUrl}/oauth/identity`,
-      method: 'GET',
-    };
-
-    const authHeader = this.oauth.toHeader(
-      this.oauth.authorize(requestData, token)
-    );
-
-    const response = await this.axios.get('/oauth/identity', {
-      headers: authHeader as unknown as Record<string, string>,
-    });
-
-    return response.data;
-  }
-
   private async getAuthHeaders(): Promise<Record<string, string>> {
-    const token = await this.authService.getDiscogsToken();
+    const key = process.env.DISCOGS_CLIENT_ID || '';
+    const secret = process.env.DISCOGS_CLIENT_SECRET || '';
 
-    if (!token) {
-      throw new Error('No Discogs token available. Please authenticate first.');
-    }
-
-    // For Personal Access Token (simpler approach)
-    if (token.startsWith('Discogs token=')) {
+    if (key && secret) {
       return {
-        Authorization: token,
+        Authorization: `Discogs key=${key}, secret=${secret}`,
       };
     }
 
-    // For OAuth token
-    const requestData = {
-      url: this.baseUrl,
-      method: 'GET',
-    };
-
-    const parsed = safeJsonParse<{ key: string; secret: string }>(token);
-    if (!parsed.success) {
-      throw new Error(`Corrupted Discogs OAuth token: ${parsed.error.message}`);
-    }
-    return {
-      ...this.oauth.toHeader(this.oauth.authorize(requestData, parsed.data)),
-    };
+    return {};
   }
 
-  async getUserProfile(): Promise<DiscogsUserIdentity> {
+  async getUserProfile(username: string): Promise<DiscogsUserIdentity> {
     try {
-      const token = await this.authService.getDiscogsToken();
-
-      if (!token) {
-        throw new Error(
-          'No Discogs token available. Please authenticate first.'
-        );
-      }
-
-      // For Personal Access Token, we need to make a simple API call to get user info
-      if (token.startsWith('Discogs token=')) {
-        const headers = {
-          Authorization: token,
-          'User-Agent': 'DiscogLastfmScrobbler/1.0',
-        };
-
-        // For personal tokens, we can use the /users/{username} endpoint
-        // But first we need to get our own user info
-        // Let's try a simple API call first to test the token
-        await this.axios.get(
-          '/database/search?q=test&type=release&per_page=1',
-          {
-            headers,
-          }
-        );
-
-        // If that works, the token is valid, but we still need username
-        // For now, return a placeholder - in a real app you'd need to get username another way
-        return {
-          username: 'user', // Placeholder - we'd need to get this from somewhere else
-          id: 0,
-          resource_url: '',
-        };
-      }
-
-      // For OAuth token, use the identity endpoint
       const headers = await this.getAuthHeaders();
-      const response = await this.axios.get('/oauth/identity', { headers });
+      const response = await this.axios.get(`/users/${username}`, { headers });
       return response.data;
     } catch (error) {
       this.logger.error('Error fetching user profile', error);

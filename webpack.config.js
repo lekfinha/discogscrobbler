@@ -101,6 +101,10 @@ module.exports = (env, argv) => {
       new webpack.DefinePlugin({
         'process.env.REACT_APP_BACKEND_PORT': JSON.stringify(BACKEND_PORT),
       }),
+      new webpack.ProvidePlugin({
+        process: 'process/browser.js',
+        Buffer: ['buffer', 'Buffer'],
+      }),
     ],
     performance: {
       // Local-first app — default 244 KiB thresholds are for public websites

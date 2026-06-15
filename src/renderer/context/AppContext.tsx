@@ -14,10 +14,22 @@ type AppAction =
   | { type: 'SET_SERVER_URL'; payload: string }
   | { type: 'CLEAR_ERROR' };
 
+const getBaseUrl = () => {
+  const port = process.env.REACT_APP_BACKEND_PORT || '3001';
+  let hostname = '127.0.0.1';
+  if (typeof window !== 'undefined') {
+    hostname =
+      window.location.hostname === 'localhost'
+        ? '127.0.0.1'
+        : window.location.hostname;
+  }
+  return `http://${hostname}:${port}`;
+};
+
 const initialState: AppState = {
   loading: false,
   error: null,
-  serverUrl: `http://localhost:${process.env.REACT_APP_BACKEND_PORT || '3001'}`,
+  serverUrl: getBaseUrl(),
 };
 
 const AppContext = createContext<
@@ -49,10 +61,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({
   const [state, dispatch] = useReducer(appReducer, initialState);
 
   useEffect(() => {
-    // For web app, server URL is based on environment variable
+    // For web app, server URL is based on environment variable and hostname
     dispatch({
       type: 'SET_SERVER_URL',
-      payload: `http://localhost:${process.env.REACT_APP_BACKEND_PORT || '3001'}`,
+      payload: getBaseUrl(),
     });
   }, []);
 

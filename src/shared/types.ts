@@ -79,7 +79,6 @@ export interface CollectionFilterPreset {
 
 export interface UserSettings {
   discogs: {
-    token?: string;
     username?: string;
   };
   lastfm: {
@@ -93,9 +92,6 @@ export interface UserSettings {
     autoScrobble: boolean;
     historyDefaultTab?: 'sessions' | 'lastfm';
     collectionPresets?: CollectionFilterPreset[];
-  };
-  temp?: {
-    oauthTokenSecret?: string;
   };
 }
 

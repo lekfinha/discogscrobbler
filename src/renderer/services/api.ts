@@ -82,12 +82,22 @@ class ApiService {
   private api: AxiosInstance;
   private baseUrl: string;
 
-  constructor(
-    baseUrl: string = `http://localhost:${process.env.REACT_APP_BACKEND_PORT || '3001'}`
-  ) {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl?: string) {
+    if (!baseUrl) {
+      const port = process.env.REACT_APP_BACKEND_PORT || '3001';
+      let hostname = '127.0.0.1';
+      if (typeof window !== 'undefined') {
+        hostname =
+          window.location.hostname === 'localhost'
+            ? '127.0.0.1'
+            : window.location.hostname;
+      }
+      this.baseUrl = `http://${hostname}:${port}`;
+    } else {
+      this.baseUrl = baseUrl;
+    }
     this.api = axios.create({
-      baseURL: `${baseUrl}/api/v1`,
+      baseURL: `${this.baseUrl}/api/v1`,
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
@@ -223,9 +233,8 @@ class ApiService {
   }
 
   // OAuth methods
-  async getDiscogsAuthUrl(): Promise<string> {
-    const response = await this.api.get('/auth/discogs/auth-url');
-    return response.data.data.authUrl;
+  async setDiscogsUsername(username: string): Promise<void> {
+    await this.api.post('/auth/discogs/username', { username });
   }
 
   // Collection methods

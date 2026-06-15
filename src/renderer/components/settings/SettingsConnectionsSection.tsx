@@ -22,111 +22,38 @@ const SettingsConnectionsSection: React.FC<SettingsConnectionsSectionProps> = ({
   } | null>(null);
 
   // Manual entry states
-  const [discogsToken, setDiscogsToken] = useState('');
   const [discogsUsername, setDiscogsUsername] = useState('');
   const [lastfmToken, setLastfmToken] = useState('');
 
-  const handleDiscogsAuth = async () => {
+  const handleDiscogsUsernameSubmit = async () => {
+    if (!discogsUsername) {
+      setMessage({ type: 'error', text: 'Please enter your Discogs username' });
+      return;
+    }
+
     setLoading('discogs');
     setMessage(null);
 
     try {
-      // Get OAuth URL and open it in a new window
-      const authUrl = await api.getDiscogsAuthUrl();
-      log.debug('Discogs auth URL obtained');
+      await api.setDiscogsUsername(discogsUsername);
 
-      // Open auth URL in a new window
-      const authWindow = window.open(
-        authUrl,
-        'discogs-auth',
-        'width=600,height=600'
-      );
-      log.debug('Auth window opened', { success: !!authWindow });
+      const newStatus = await api.getAuthStatus();
+      setAuthStatus(newStatus);
 
-      // Poll for authentication success
-      const checkAuth = setInterval(async () => {
-        try {
-          if (authWindow?.closed) {
-            clearInterval(checkAuth);
-            // Wait a moment for the callback to complete, then retry multiple times
-            let retryCount = 0;
-            const maxRetries = 5;
-
-            const checkStatus = async () => {
-              try {
-                log.debug(
-                  `Checking Discogs auth status (attempt ${retryCount + 1})`
-                );
-                const newStatus = await api.getAuthStatus();
-                log.debug('Discogs auth status checked', {
-                  authenticated: newStatus.discogs.authenticated,
-                });
-
-                if (newStatus.discogs.authenticated) {
-                  setAuthStatus(newStatus);
-                  setMessage({
-                    type: 'success',
-                    text: `Successfully connected to Discogs as ${newStatus.discogs.username}`,
-                  });
-                  setLoading('');
-                } else if (retryCount < maxRetries - 1) {
-                  retryCount++;
-                  setTimeout(checkStatus, 2000); // Wait 2 seconds before retry
-                } else {
-                  setMessage({
-                    type: 'error',
-                    text: 'Authentication was cancelled or failed',
-                  });
-                  setLoading('');
-                }
-              } catch {
-                if (retryCount < maxRetries - 1) {
-                  retryCount++;
-                  setTimeout(checkStatus, 2000);
-                } else {
-                  log.error(
-                    'Failed to check Discogs auth status after retries'
-                  );
-                  setMessage({
-                    type: 'error',
-                    text: 'Failed to check authentication status',
-                  });
-                  setLoading('');
-                }
-              }
-            };
-
-            setTimeout(checkStatus, 1000);
-          }
-        } catch {
-          clearInterval(checkAuth);
-          setMessage({
-            type: 'error',
-            text: 'Failed to check authentication status',
-          });
-          setLoading('');
-        }
-      }, 1000);
-
-      // Timeout after 5 minutes
-      setTimeout(() => {
-        clearInterval(checkAuth);
-        if (authWindow && !authWindow.closed) {
-          authWindow.close();
-        }
-        if (loading === 'discogs') {
-          setMessage({ type: 'error', text: 'Authentication timed out' });
-          setLoading('');
-        }
-      }, 300000);
+      setMessage({
+        type: 'success',
+        text: `Successfully connected to Discogs as ${newStatus.discogs.username}`,
+      });
+      setDiscogsUsername('');
     } catch (error) {
       setMessage({
         type: 'error',
         text:
           error instanceof Error
             ? error.message
-            : 'Failed to start Discogs authentication',
+            : 'Failed to verify or save Discogs username',
       });
+    } finally {
       setLoading('');
     }
   };
@@ -240,60 +167,6 @@ const SettingsConnectionsSection: React.FC<SettingsConnectionsSectionProps> = ({
     }
   };
 
-  const handleDiscogsPersonalTokenAuth = async () => {
-    log.debug('Starting Discogs personal token auth');
-
-    if (!discogsToken) {
-      log.debug('No token provided');
-      setMessage({
-        type: 'error',
-        text: 'Please enter your Personal Access Token',
-      });
-      return;
-    }
-
-    log.debug('Token provided, proceeding with auth');
-    setLoading('discogs-personal');
-    setMessage(null);
-
-    try {
-      // Add the "Discogs token=" prefix if not already present
-      const formattedToken = discogsToken.startsWith('Discogs token=')
-        ? discogsToken
-        : `Discogs token=${discogsToken}`;
-
-      log.debug('Saving Discogs token');
-      await api.saveDiscogsToken(formattedToken, discogsUsername);
-      log.debug('Token saved successfully');
-
-      log.debug('Getting auth status');
-      const newStatus = await api.getAuthStatus();
-      log.debug('Auth status retrieved', {
-        authenticated: newStatus.discogs.authenticated,
-      });
-      setAuthStatus(newStatus);
-
-      setMessage({
-        type: 'success',
-        text: `Successfully connected to Discogs as ${discogsUsername || 'user'}`,
-      });
-      setDiscogsToken('');
-      setDiscogsUsername('');
-    } catch (error) {
-      log.error('Discogs personal token auth error', error);
-      setMessage({
-        type: 'error',
-        text:
-          error instanceof Error
-            ? error.message
-            : 'Failed to connect to Discogs',
-      });
-    } finally {
-      log.debug('Personal token auth flow complete');
-      setLoading('');
-    }
-  };
-
   const handleLastfmManualAuth = async () => {
     if (!lastfmToken) {
       setMessage({ type: 'error', text: 'Please enter the Last.fm token' });
@@ -388,88 +261,26 @@ const SettingsConnectionsSection: React.FC<SettingsConnectionsSectionProps> = ({
           </div>
         </div>
 
-        <p>
-          Connect to your Discogs account using OAuth. Your API credentials are
-          already configured.
-        </p>
+        <p>Enter your Discogs username to access your public collection.</p>
 
-        <Button
-          onClick={handleDiscogsAuth}
-          disabled={loading === 'discogs' || authStatus.discogs.authenticated}
-        >
-          {loading === 'discogs' ? 'Connecting...' : 'Connect to Discogs'}
-        </Button>
-
-        {/* Manual Token Entry */}
-        <div className='alternative-method-section'>
-          <h4>Alternative: Personal Access Token</h4>
-          <p>
-            If OAuth isn't working, you can use a Personal Access Token instead:
-          </p>
-
-          <div className='instructions-box'>
-            <strong>How to get a Personal Access Token:</strong>
-            <ol className='instructions-list'>
-              <li>
-                Go to{' '}
-                <a
-                  href='https://discogs.com/settings/developers'
-                  target='_blank'
-                  rel='noopener noreferrer'
-                >
-                  Discogs Developer Settings
-                </a>
-              </li>
-              <li>Click "Generate new token"</li>
-              <li>
-                Copy just the token value (the part after "Discogs token=")
-              </li>
-            </ol>
-          </div>
-
-          <div className='form-group'>
-            <label className='form-label'>Personal Access Token:</label>
-            <input
-              type='text'
-              className='form-input'
-              value={discogsToken}
-              onChange={e => setDiscogsToken(e.target.value)}
-              placeholder='your_token_here'
-            />
-            <small className='form-helper-text'>
-              Just paste the token value (without the "Discogs token=" prefix)
-            </small>
-          </div>
-
-          <div className='form-group'>
-            <label className='form-label'>Your Discogs Username:</label>
+        <div className='form-group' style={{ maxWidth: '400px' }}>
+          <label className='form-label'>Discogs Username:</label>
+          <div style={{ display: 'flex', gap: '10px' }}>
             <input
               type='text'
               className='form-input'
               value={discogsUsername}
               onChange={e => setDiscogsUsername(e.target.value)}
-              placeholder='your_discogs_username'
+              placeholder='your_username'
+              style={{ flex: 1 }}
             />
-            <small className='form-helper-text'>
-              Your Discogs username (needed to access your collection)
-            </small>
+            <Button
+              onClick={handleDiscogsUsernameSubmit}
+              disabled={loading === 'discogs' || !discogsUsername}
+            >
+              {loading === 'discogs' ? 'Saving...' : 'Save'}
+            </Button>
           </div>
-
-          <Button
-            onClick={() => {
-              handleDiscogsPersonalTokenAuth();
-            }}
-            disabled={
-              loading === 'discogs-personal' ||
-              authStatus.discogs.authenticated ||
-              !discogsToken ||
-              !discogsUsername
-            }
-          >
-            {loading === 'discogs-personal'
-              ? 'Authenticating...'
-              : 'Submit Personal Token'}
-          </Button>
         </div>
       </div>
 

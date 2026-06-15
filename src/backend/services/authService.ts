@@ -152,7 +152,6 @@ export class AuthService {
    */
   private hasCredentials(settings: UserSettings): boolean {
     return !!(
-      settings.discogs.token ||
       settings.discogs.username ||
       settings.lastfm.apiKey ||
       settings.lastfm.sessionKey ||
@@ -165,11 +164,7 @@ export class AuthService {
    * Used to detect decryption failures where tokens become empty but usernames remain.
    */
   private hasAuthTokens(settings: UserSettings): boolean {
-    return !!(
-      settings.discogs.token ||
-      settings.lastfm.apiKey ||
-      settings.lastfm.sessionKey
-    );
+    return !!(settings.lastfm.apiKey || settings.lastfm.sessionKey);
   }
 
   async getUserSettings(): Promise<UserSettings> {
@@ -244,7 +239,6 @@ export class AuthService {
         'DECRYPTION FAILURE DETECTED: Settings had auth tokens but decryption returned empty values. ' +
           'This usually means the encryption key has changed.',
         {
-          hadDiscogsToken: !!settings.discogs.token,
           hadLastfmApiKey: !!settings.lastfm.apiKey,
           hadLastfmSessionKey: !!settings.lastfm.sessionKey,
           // Don't log actual values, just presence
@@ -269,12 +263,8 @@ export class AuthService {
       discogs: { ...settings.discogs },
       lastfm: { ...settings.lastfm },
       preferences: { ...settings.preferences },
-      temp: settings.temp ? { ...settings.temp } : undefined,
     };
 
-    if (decrypted.discogs.token) {
-      decrypted.discogs.token = this.decrypt(decrypted.discogs.token);
-    }
     if (decrypted.lastfm.apiKey) {
       decrypted.lastfm.apiKey = this.decrypt(decrypted.lastfm.apiKey);
     }
@@ -292,17 +282,11 @@ export class AuthService {
     // Deep copy to avoid mutating the original settings object
     const encryptedSettings: UserSettings = {
       discogs: { ...settings.discogs },
-      lastfm: { ...settings.lastfm },
       preferences: { ...settings.preferences },
-      temp: settings.temp ? { ...settings.temp } : undefined,
+      lastfm: { ...settings.lastfm },
     };
 
     // Encrypt sensitive data
-    if (encryptedSettings.discogs.token) {
-      encryptedSettings.discogs.token = this.encrypt(
-        encryptedSettings.discogs.token
-      );
-    }
     if (encryptedSettings.lastfm.apiKey) {
       encryptedSettings.lastfm.apiKey = this.encrypt(
         encryptedSettings.lastfm.apiKey
@@ -328,7 +312,7 @@ export class AuthService {
           logger.error(
             'BLOCKED: Refusing to overwrite auth tokens with empty values',
             {
-              hasDiscogsToken: !!existing.discogs.token,
+              hasDiscogsToken: !!existing.discogs.username,
               hasLastfmApiKey: !!existing.lastfm.apiKey,
               hasLastfmSessionKey: !!existing.lastfm.sessionKey,
             }
@@ -358,12 +342,9 @@ export class AuthService {
     );
   }
 
-  async setDiscogsToken(token: string, username?: string): Promise<void> {
+  async setDiscogsCredentials(username: string): Promise<void> {
     const settings = await this.getUserSettings();
-    settings.discogs.token = token;
-    if (username) {
-      settings.discogs.username = username;
-    }
+    settings.discogs.username = username;
     await this.saveUserSettings(settings);
   }
 
@@ -381,9 +362,9 @@ export class AuthService {
     await this.saveUserSettings(settings);
   }
 
-  async getDiscogsToken(): Promise<string | undefined> {
+  async getDiscogsUsername(): Promise<string | undefined> {
     const settings = await this.getUserSettings();
-    return settings.discogs.token;
+    return settings.discogs.username;
   }
 
   async getLastFmCredentials(): Promise<{
@@ -409,30 +390,6 @@ export class AuthService {
 
   generateNonce(): string {
     return crypto.randomBytes(16).toString('hex');
-  }
-
-  // OAuth token secret storage (temporary)
-  async storeOAuthTokenSecret(tokenSecret: string): Promise<void> {
-    const settings = await this.getUserSettings();
-    settings.temp = settings.temp || {};
-    settings.temp.oauthTokenSecret = tokenSecret;
-    await this.saveUserSettings(settings);
-  }
-
-  async getOAuthTokenSecret(): Promise<string | undefined> {
-    const settings = await this.getUserSettings();
-    return settings.temp?.oauthTokenSecret;
-  }
-
-  async clearOAuthTokenSecret(): Promise<void> {
-    const settings = await this.getUserSettings();
-    if (settings.temp) {
-      delete settings.temp.oauthTokenSecret;
-      if (Object.keys(settings.temp).length === 0) {
-        delete settings.temp;
-      }
-    }
-    await this.saveUserSettings(settings);
   }
 
   generateTimestamp(): string {
