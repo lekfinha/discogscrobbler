@@ -25,6 +25,12 @@ const ScrobblePage: React.FC = () => {
   const { state } = useApp();
   const [selectedAlbums, setSelectedAlbums] = useState<CollectionItem[]>([]);
   const [preparedTracks, setPreparedTracks] = useState<ScrobbleTrack[]>([]);
+  const [baseAlbumTracks, setBaseAlbumTracks] = useState<
+    Record<number, ScrobbleTrack[]>
+  >({});
+  const [albumMultipliers, setAlbumMultipliers] = useState<
+    Record<number, number>
+  >({});
   const [selectedTracks, setSelectedTracks] = useState<Set<number>>(new Set());
   const [customTimestamp, setCustomTimestamp] = useState<string>('');
   const [useCurrentTime, setUseCurrentTime] = useState(true);
@@ -81,9 +87,11 @@ const ScrobblePage: React.FC = () => {
     try {
       setError('');
       setPreparingTracks(true);
-      const allTracks: ScrobbleTrack[] = [];
+      const newBaseTracks: Record<number, ScrobbleTrack[]> = {};
+      const newMultipliers: Record<number, number> = {};
 
       for (const album of albums) {
+        newMultipliers[album.release.id] = 1;
         const releaseDetails = await api.getReleaseDetails(album.release.id);
         if (releaseDetails.tracklist) {
           const trackTimestamp = useCurrentTime
@@ -103,13 +111,12 @@ const ScrobblePage: React.FC = () => {
               : undefined,
           }));
 
-          allTracks.push(...albumTracks);
+          newBaseTracks[album.release.id] = albumTracks;
         }
       }
 
-      setPreparedTracks(allTracks);
-      // Select all tracks by default
-      setSelectedTracks(new Set(allTracks.map((_, index) => index)));
+      setBaseAlbumTracks(newBaseTracks);
+      setAlbumMultipliers(newMultipliers);
     } catch (_error) {
       setError(
         _error instanceof Error ? _error.message : 'Failed to prepare tracks'
@@ -135,6 +142,28 @@ const ScrobblePage: React.FC = () => {
     } else {
       setSelectedTracks(new Set(preparedTracks.map((_, index) => index)));
     }
+  };
+
+  // Regenerate preparedTracks when multipliers or base tracks change
+  useEffect(() => {
+    const allTracks: ScrobbleTrack[] = [];
+    for (const album of selectedAlbums) {
+      const baseTracks = baseAlbumTracks[album.release.id];
+      if (baseTracks) {
+        const multiplier = albumMultipliers[album.release.id] || 1;
+        for (let i = 0; i < multiplier; i++) {
+          allTracks.push(...baseTracks);
+        }
+      }
+    }
+    setPreparedTracks(allTracks);
+    setSelectedTracks(new Set(allTracks.map((_, index) => index)));
+  }, [baseAlbumTracks, albumMultipliers, selectedAlbums]);
+
+  const handleMultiplierChange = (albumId: number, multiplier: number) => {
+    if (multiplier < 1) multiplier = 1;
+    if (multiplier > 20) multiplier = 20;
+    setAlbumMultipliers(prev => ({ ...prev, [albumId]: multiplier }));
   };
 
   // Pattern to detect Discogs disambiguation suffix like (2), (11), etc.
@@ -373,8 +402,47 @@ const ScrobblePage: React.FC = () => {
           <h3>Selected Albums ({selectedAlbums.length})</h3>
           <div className='scrobble-album-badges'>
             {selectedAlbums.map((album, index) => (
-              <div key={index} className='scrobble-album-badge'>
-                {album.release.artist} - {album.release.title}
+              <div
+                key={index}
+                className='scrobble-album-badge'
+                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              >
+                <span style={{ flex: 1 }}>
+                  {album.release.artist} - {album.release.title}
+                </span>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    backgroundColor: 'rgba(0,0,0,0.1)',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                  }}
+                >
+                  <span style={{ fontSize: '0.85em', opacity: 0.8 }}>×</span>
+                  <input
+                    type='number'
+                    min='1'
+                    max='20'
+                    value={albumMultipliers[album.release.id] || 1}
+                    onChange={e =>
+                      handleMultiplierChange(
+                        album.release.id,
+                        parseInt(e.target.value) || 1
+                      )
+                    }
+                    style={{
+                      width: '40px',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'inherit',
+                      textAlign: 'center',
+                      fontWeight: 'bold',
+                    }}
+                    title='Number of times listened'
+                  />
+                </div>
               </div>
             ))}
           </div>
