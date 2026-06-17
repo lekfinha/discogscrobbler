@@ -10,7 +10,7 @@
 
 A modern web application that bridges your Discogs collection with Last.fm scrobbling. Browse your vinyl collection, select albums or tracks, and automatically scrobble them to your Last.fm profile with customizable timestamps.
 
-## ✨ What This Does
+## What This Does
 
 - **Browse Your Collection**: View your entire Discogs vinyl collection with search and filtering
 - **Smart Scrobbling**: Select individual tracks or entire albums to scrobble
@@ -21,12 +21,12 @@ A modern web application that bridges your Discogs collection with Last.fm scrob
 - **Local-first**: Runs on your machine (browser UI + local Node/Express API) - your data stays on your computer
 - **Caching**: 24-hour cache keeps your collection loading fast
 
-## 🚀 Quick Start
+## Quick Start
 
 1. **Install**:
    ```bash
-   git clone <repository-url>
-   cd recordscrobbles
+   git clone https://github.com/lekfinha/discogscrobbler/
+   cd discogscrobbler
    npm install
    ```
 
@@ -41,13 +41,13 @@ A modern web application that bridges your Discogs collection with Last.fm scrob
 
 5. **Authenticate & Scrobble**: Use **Setup & Authentication** in the UI to connect Discogs + Last.fm, then start scrobbling.
 
-## 📋 Prerequisites
+## Prerequisites
 
 - **Node.js 18+** and npm
 - **Discogs account** with API access
 - **Last.fm account** with API access
 
-## 🔧 API Setup
+## API Setup
 
 ### Discogs API (Required)
 1. Go to [Discogs Settings → Developers](https://www.discogs.com/settings/developers)
@@ -68,7 +68,7 @@ A modern web application that bridges your Discogs collection with Last.fm scrob
    - **Callback URL**: `http://localhost:3001/api/v1/auth/lastfm/callback`
 3. Save your **API Key** and **Shared Secret**
 
-## ⚙️ Configuration (.env)
+## Configuration (.env)
 
 Create a `.env` file in the project root (it is ignored by git). You can start from `.env.example`.
 
@@ -106,7 +106,7 @@ npm run dev:app
 npm run start:web
 ```
 
-## 🎯 Features
+## Features
 
 ### Core Features
 - **Home Dashboard**: Engaging dashboard with quick stats, quick actions, recent albums, and monthly highlights
@@ -141,7 +141,7 @@ npm run start:web
 - **Possible Mappings**: Automatically suggests artists in your collection that may need name mappings
 - **Split Entry Detection**: Detects and merges duplicate history entries caused by artist name variants
 
-### 🏠 Home Dashboard
+### Home Dashboard
 Your personalized dashboard showing key metrics and insights at a glance:
 
 **Quick Stats:**
@@ -168,7 +168,7 @@ Your personalized dashboard showing key metrics and insights at a glance:
 - Discogs and Last.fm authentication
 - Auto-collapses when all services connected
 
-### 📈 Stats Dashboard
+### Stats Dashboard
 Comprehensive listening statistics and visualizations:
 
 - **Listening Streak**: Track your daily listening streak and longest streak ever
@@ -190,7 +190,7 @@ Comprehensive listening statistics and visualizations:
 - **Source Breakdown**: See which sources your scrobbles come from
 - **Listening Timeline**: Visualize listening trends over time
 
-### 📊 Collection Analytics
+### Collection Analytics
 Insights into your vinyl collection powered by Discogs data -- no Last.fm sync required:
 
 - **Collection Summary**: Total records, artists, labels, average release year, and rating stats
@@ -201,7 +201,7 @@ Insights into your vinyl collection powered by Discogs data -- no Last.fm sync r
 - **Collection Value Estimation**: Progressive marketplace scan fetches median (VG+), low, and high prices for every release. Includes most/least valuable items, value by decade, and value by format
 - **Scan Progress**: Background scanning with real-time progress bar, ETA, and current-item display. Resumable after interruption with 7-day cache per release
 
-### 🎤 Artist & Track Deep Dives
+### Artist & Track Deep Dives
 Click any artist or track name throughout the app to navigate to a dedicated detail page:
 
 **Artist Detail Page:**
@@ -226,7 +226,7 @@ Click any artist or track name throughout the app to navigate to a dedicated det
 - Release details page artist names
 - Album cards throughout the collection
 
-### 🎲 What to Play
+### What to Play
 A hub for deciding what to spin next, with three tabs: **Play Suggestions**, **Forgotten Favorites**, and **Dusty Corners**.
 
 #### Play Suggestions
@@ -269,7 +269,7 @@ Albums in your collection you haven't played in 6+ months:
 - Spotify play buttons for quick rediscovery
 - Configurable dormancy threshold
 
-### 🧠 Memory Scrobble
+### Memory Scrobble
 Retroactively scrobble tracks from offline listening sessions — swimming, driving, or anywhere you can't scrobble live.
 
 - **Saved Collections**: Named track lists (e.g., "OpenSwim Pro") with CSV import
@@ -280,7 +280,7 @@ Retroactively scrobble tracks from offline listening sessions — swimming, driv
 - **Duration Lookup**: Automatic duration resolution via Discogs cache and Last.fm API
 - **Session Time Window**: Set start/end times, timestamps auto-generate sequentially
 - **Timeline Bar**: Visual progress showing total track duration vs session window
-- **Batch Retry**: Failed scrobbles (e.g., Last.fm 502s) stay in the list for easy retry
+- *  *Batch Retry**: Failed scrobbles (e.g., Last.fm 502s) stay in the list for easy retry
 
 ### 📊 Scrobble History Sync
 Sync your complete Last.fm history for smarter suggestions:
@@ -296,7 +296,7 @@ Sync your complete Last.fm history for smarter suggestions:
 - Clear index for full re-sync
 - Toggle auto-sync on startup
 
-### 📜 History Page
+### History Page
 Two-tab view of your listening activity:
 
 **App Scrobble Sessions Tab:**
@@ -332,10 +332,10 @@ Find albums and artists you listen to but don't own on vinyl:
 - **Play Count Sorting**: Prioritized by how often you listen
 - **Map to Collection**: Map artist to a release in your collection
 
-### 🛒 Marketplace
+### Marketplace
 A hub for all acquisition-related features, with tabs for Wishlist, New Releases, Local Sellers, Seller Matches, and Missing Albums.
 
-#### ❤️ Wishlist
+#### Wishlist
 Sync and manage your Discogs wantlist with vinyl availability tracking:
 
 **Discogs Wantlist Sync:**
@@ -384,7 +384,7 @@ Sync and manage your Discogs wantlist with vinyl availability tracking:
 - Dismiss individual releases or bulk dismiss all
 - Quick links to Discogs marketplace listings
 
-#### 🏪 Local Sellers
+#### Local Sellers
 Track Discogs inventories of your favorite local record shops to find wishlist items available nearby:
 
 **Seller Management:**
@@ -417,7 +417,7 @@ Track Discogs inventories of your favorite local record shops to find wishlist i
 - Enable/disable notifications
 - Quick-add sellers directly from settings
 
-#### 🎵 New Releases
+#### New Releases
 Track new and upcoming releases from artists in your collection using MusicBrainz data:
 
 **Release Discovery:**
@@ -451,7 +451,7 @@ Track new and upcoming releases from artists in your collection using MusicBrain
 - Include/exclude EPs and singles
 - Configure check frequency
 
-### 🤖 AI Suggestions (Optional)
+### AI Suggestions (Optional)
 Local AI-powered recommendations via [Ollama](https://ollama.ai). Runs entirely on your computer with no API fees.
 
 #### Installation
@@ -597,7 +597,7 @@ ollama pull mistral
 - Works alongside algorithm-based suggestions
 - **Cost: $0** - Runs 100% locally, no API fees, works offline
 
-### 🎧 Spotify Integration
+### Spotify Integration
 Instantly play tracks and albums on Spotify with one-click play buttons throughout the app:
 
 **How It Works:**
@@ -619,7 +619,7 @@ Instantly play tracks and albums on Spotify with one-click play buttons througho
 - Spotify desktop app (recommended) or web browser access
 - No additional configuration needed
 
-### 🎁 Wrapped (Period in Review)
+### Wrapped (Period in Review)
 A Spotify Wrapped-style interactive slideshow summarizing your listening activity over any time period:
 
 **Presets & Custom Ranges:**
@@ -637,7 +637,7 @@ A Spotify Wrapped-style interactive slideshow summarizing your listening activit
 - Vinyl vs digital listening breakdown -- when Discogs connected
 - Listening activity heatmap
 
-### 📦 Discard Pile
+### Discard Pile
 Track records you want to sell, gift, trade in, or remove from your collection:
 
 - **Reasons**: Mark albums as selling, duplicate, damaged, upgrading, not listening, or giving away
@@ -650,7 +650,7 @@ Track records you want to sell, gift, trade in, or remove from your collection:
 - **Tabs**: Active (default, hides completed items), Pending, Listed, History (sold/gifted/traded in/removed), Orphaned
 - **Component Architecture**: Decomposed into DiscardItemCard, DiscardStatsBar, DiscardFilterBar, and selection hook
 
-### 📀 Album Scrobble History
+### Album Scrobble History
 View detailed listening history for any album:
 
 - **Last Played**: When you last scrobbled the album
@@ -665,7 +665,7 @@ View detailed listening history for any album:
 - **Track Mapping Support**: Manual track-level mappings for naming variants
 - Visible on the Release Details page
 
-### 💾 Backup & Restore
+### Backup & Restore
 Protect your user-generated data with manual and automatic backups:
 
 **What's Backed Up:**
@@ -701,7 +701,7 @@ Protect your user-generated data with manual and automatic backups:
 - Password required to export/import credentials
 - Checksums prevent tampering
 
-## 🛠️ Development
+## Development
 
 ### Scripts
 ```bash
@@ -835,7 +835,7 @@ src/
         └── trackNormalization.ts  # Track/artist name normalization
 ```
 
-## 🔒 Security & Privacy
+## Security & Privacy
 
 - **Local Storage**: App data (cache, history, settings) is stored locally under `./data/` (gitignored)
 - **Encrypted Tokens**: API credentials are encrypted at rest (requires `ENCRYPTION_KEY`)
@@ -843,7 +843,7 @@ src/
 - **No Cloud Dependencies**: Everything runs on your computer
 - **CORS Protected**: Only allows localhost connections by default (with a strict allowlist)
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -868,7 +868,7 @@ src/
 3. Review API credentials in the setup wizard
 4. Check the application logs in the terminal
 
-## 📊 Testing
+## Testing
 
 ```bash
 npm test              # Run all tests
@@ -878,7 +878,7 @@ npm run test:watch    # Run in watch mode
 
 **Coverage Thresholds**: Enforced in jest.config.js (incrementally raised as coverage improves)
 
-## 🤝 Contributing
+## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidance on architecture, coding standards, and development workflow.
 
@@ -892,7 +892,7 @@ Quick start:
 
 See also: [TEST_STYLE_GUIDE.md](TEST_STYLE_GUIDE.md) | [TESTING_GUIDE.md](TESTING_GUIDE.md) | [SECURITY.md](SECURITY.md)
 
-## 📄 License
+## License
 
 MIT License - See [LICENSE](LICENSE) file for details.
 
