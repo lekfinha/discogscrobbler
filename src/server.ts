@@ -24,6 +24,7 @@ import { createMemoryScrobbleRouter } from './backend/routes/memoryScrobble';
 import { createRecommendationsRouter } from './backend/routes/recommendations';
 import createReleasesRouter from './backend/routes/releases';
 import createScrobbleRouter from './backend/routes/scrobble';
+import scrobbleMappingsRouter from './backend/routes/scrobbleMappings';
 import createSellersRouter from './backend/routes/sellers';
 import createStatsRouter from './backend/routes/stats';
 import createSuggestionsRouter from './backend/routes/suggestions';
@@ -428,6 +429,7 @@ app.use(
     historyStorage
   )
 );
+app.use('/api/v1/scrobble-mappings', scrobbleMappingsRouter);
 app.use('/api/v1/wrapped', createWrappedRouter(wrappedService));
 app.use(
   '/api/v1/collection-analytics',
@@ -462,6 +464,7 @@ app.get('/api/v1', (req, res) => {
       jobs: '/api/v1/jobs',
       recommendations: '/api/v1/recommendations',
       embeddings: '/api/v1/embeddings',
+      scrobbleMappings: '/api/v1/scrobble-mappings',
     },
   });
 });

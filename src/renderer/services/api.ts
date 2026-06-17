@@ -76,6 +76,16 @@ import {
 } from '../../shared/types';
 import { createLogger } from '../utils/logger';
 
+export interface ScrobbleOverride {
+  discogsArtist: string;
+  discogsAlbum: string;
+  discogsTrack: string;
+  lastfmArtist: string;
+  lastfmAlbum: string;
+  lastfmTrack: string;
+  dateAdded: number;
+}
+
 const log = createLogger('ApiService');
 
 class ApiService {
@@ -1050,6 +1060,28 @@ class ApiService {
   async getTrackMappingCount(): Promise<number> {
     const response = await this.api.get('/suggestions/mappings/tracks/count');
     return response.data.count;
+  }
+
+  // Scrobble Overrides (Inline edits in Scrobble Page)
+  async getScrobbleOverrides(): Promise<ScrobbleOverride[]> {
+    const response = await this.api.get('/scrobble-mappings');
+    return response.data.data;
+  }
+
+  async addScrobbleOverride(
+    override: Omit<ScrobbleOverride, 'dateAdded'>
+  ): Promise<void> {
+    await this.api.post('/scrobble-mappings', override);
+  }
+
+  async removeScrobbleOverride(
+    artist: string,
+    album: string,
+    track: string
+  ): Promise<void> {
+    await this.api.delete('/scrobble-mappings', {
+      params: { artist, album, track },
+    });
   }
 
   // ============================================

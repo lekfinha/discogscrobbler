@@ -1,4 +1,4 @@
-import { Check, XCircle } from 'lucide-react';
+import { Check, XCircle, Edit2, Save, X } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import './ScrobblePage.page.css';
 
@@ -14,7 +14,7 @@ import { ListItemSkeleton } from '../components/ui/Skeleton';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { navigate } from '../routes';
-import { getApiService } from '../services/api';
+import { ScrobbleOverride, getApiService } from '../services/api';
 import { formatLocalTimeClean } from '../utils/dateUtils';
 import { createLogger } from '../utils/logger';
 
@@ -48,6 +48,15 @@ const ScrobblePage: React.FC = () => {
   const [disambiguationArtists, setDisambiguationArtists] = useState<string[]>(
     []
   );
+  const [, setOverrides] = useState<ScrobbleOverride[]>([]);
+  const [editingTrackIndex, setEditingTrackIndex] = useState<number | null>(
+    null
+  );
+  const [editForm, setEditForm] = useState({
+    artist: '',
+    album: '',
+    track: '',
+  });
 
   const api = getApiService(state.serverUrl);
 
@@ -90,6 +99,9 @@ const ScrobblePage: React.FC = () => {
       const newBaseTracks: Record<number, ScrobbleTrack[]> = {};
       const newMultipliers: Record<number, number> = {};
 
+      const currentOverrides = await api.getScrobbleOverrides();
+      setOverrides(currentOverrides);
+
       for (const album of albums) {
         newMultipliers[album.release.id] = 1;
         const releaseDetails = await api.getReleaseDetails(album.release.id);
@@ -100,16 +112,44 @@ const ScrobblePage: React.FC = () => {
               ? new Date(customTimestamp).getTime() / 1000
               : undefined;
 
-          const albumTracks = releaseDetails.tracklist.map((track, _index) => ({
-            artist: track.artist || releaseDetails.artist,
-            track: track.title,
-            album: releaseDetails.title,
-            albumCover: album.release.cover_image || releaseDetails.cover_image,
-            timestamp: trackTimestamp,
-            duration: track.duration
-              ? parseInt(track.duration.replace(':', ''))
-              : undefined,
-          }));
+          const albumTracks = releaseDetails.tracklist.map((track, _index) => {
+            let artist = track.artist || releaseDetails.artist;
+            let albumName = releaseDetails.title;
+            let trackName = track.title;
+
+            // Apply overrides if they exist
+            const override = currentOverrides.find(
+              o =>
+                o.discogsArtist.toLowerCase().trim() ===
+                  artist.toLowerCase().trim() &&
+                o.discogsAlbum.toLowerCase().trim() ===
+                  albumName.toLowerCase().trim() &&
+                o.discogsTrack.toLowerCase().trim() ===
+                  trackName.toLowerCase().trim()
+            );
+
+            if (override) {
+              artist = override.lastfmArtist;
+              albumName = override.lastfmAlbum;
+              trackName = override.lastfmTrack;
+            }
+
+            return {
+              artist,
+              track: trackName,
+              album: albumName,
+              albumCover:
+                album.release.cover_image || releaseDetails.cover_image,
+              timestamp: trackTimestamp,
+              duration: track.duration
+                ? parseInt(track.duration.replace(':', ''))
+                : undefined,
+              // Keep original names to save future overrides
+              originalArtist: track.artist || releaseDetails.artist,
+              originalAlbum: releaseDetails.title,
+              originalTrack: track.title,
+            };
+          });
 
           newBaseTracks[album.release.id] = albumTracks;
         }
@@ -142,6 +182,71 @@ const ScrobblePage: React.FC = () => {
     } else {
       setSelectedTracks(new Set(preparedTracks.map((_, index) => index)));
     }
+  };
+
+  const handleEditClick = (index: number) => {
+    const track = preparedTracks[index];
+    setEditForm({
+      artist: track.artist,
+      album: track.album || '',
+      track: track.track,
+    });
+    setEditingTrackIndex(index);
+  };
+
+  const handleEditSave = async (index: number) => {
+    const track = preparedTracks[index];
+    const originalArtist = track.originalArtist || track.artist;
+    const originalAlbum = track.originalAlbum || track.album || '';
+    const originalTrack = track.originalTrack || track.track;
+
+    const newArtist = editForm.artist.trim() || track.artist;
+    const newAlbum = editForm.album.trim() || track.album || '';
+    const newTrack = editForm.track.trim() || track.track;
+
+    try {
+      await api.addScrobbleOverride({
+        discogsArtist: originalArtist,
+        discogsAlbum: originalAlbum,
+        discogsTrack: originalTrack,
+        lastfmArtist: newArtist,
+        lastfmAlbum: newAlbum,
+        lastfmTrack: newTrack,
+      });
+
+      setOverrides(prev => [
+        ...prev.filter(
+          o =>
+            !(
+              o.discogsArtist === originalArtist &&
+              o.discogsAlbum === originalAlbum &&
+              o.discogsTrack === originalTrack
+            )
+        ),
+        {
+          discogsArtist: originalArtist,
+          discogsAlbum: originalAlbum,
+          discogsTrack: originalTrack,
+          lastfmArtist: newArtist,
+          lastfmAlbum: newAlbum,
+          lastfmTrack: newTrack,
+          dateAdded: Date.now(),
+        },
+      ]);
+    } catch {
+      setError('Failed to save override');
+    }
+
+    const updated = [...preparedTracks];
+    updated[index].artist = newArtist;
+    updated[index].album = newAlbum;
+    updated[index].track = newTrack;
+    setPreparedTracks(updated);
+    setEditingTrackIndex(null);
+  };
+
+  const handleEditCancel = () => {
+    setEditingTrackIndex(null);
   };
 
   // Regenerate preparedTracks when multipliers or base tracks change
@@ -532,14 +637,120 @@ const ScrobblePage: React.FC = () => {
                     type='checkbox'
                     checked={selectedTracks.has(index)}
                     onChange={() => handleTrackSelection(index)}
-                    disabled={scrobbling}
+                    disabled={scrobbling || editingTrackIndex === index}
                     className='scrobble-track-checkbox'
                   />
-                  <div className='scrobble-track-info'>
-                    <div className='scrobble-track-title'>{track.track}</div>
-                    <div className='scrobble-track-details'>
-                      {track.artist} • {track.album}
+
+                  {editingTrackIndex === index ? (
+                    <div
+                      className='scrobble-track-info'
+                      style={{
+                        flex: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                      }}
+                    >
+                      <input
+                        type='text'
+                        value={editForm.track}
+                        onChange={e =>
+                          setEditForm(prev => ({
+                            ...prev,
+                            track: e.target.value,
+                          }))
+                        }
+                        className='input-field'
+                        placeholder='Track title'
+                        style={{ padding: '4px', fontSize: '14px' }}
+                      />
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <input
+                          type='text'
+                          value={editForm.artist}
+                          onChange={e =>
+                            setEditForm(prev => ({
+                              ...prev,
+                              artist: e.target.value,
+                            }))
+                          }
+                          className='input-field'
+                          placeholder='Artist'
+                          style={{ padding: '4px', fontSize: '12px', flex: 1 }}
+                        />
+                        <input
+                          type='text'
+                          value={editForm.album}
+                          onChange={e =>
+                            setEditForm(prev => ({
+                              ...prev,
+                              album: e.target.value,
+                            }))
+                          }
+                          className='input-field'
+                          placeholder='Album'
+                          style={{ padding: '4px', fontSize: '12px', flex: 1 }}
+                        />
+                      </div>
                     </div>
+                  ) : (
+                    <div className='scrobble-track-info' style={{ flex: 1 }}>
+                      <div className='scrobble-track-title'>{track.track}</div>
+                      <div className='scrobble-track-details'>
+                        {track.artist} • {track.album}
+                      </div>
+                    </div>
+                  )}
+
+                  <div
+                    className='scrobble-track-actions'
+                    style={{ display: 'flex', gap: '4px' }}
+                  >
+                    {editingTrackIndex === index ? (
+                      <>
+                        <button
+                          className='icon-button'
+                          onClick={() => handleEditSave(index)}
+                          title='Save'
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--success-color)',
+                          }}
+                        >
+                          <Save size={16} />
+                        </button>
+                        <button
+                          className='icon-button'
+                          onClick={handleEditCancel}
+                          title='Cancel'
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--danger-color)',
+                          }}
+                        >
+                          <X size={16} />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className='icon-button'
+                        onClick={() => handleEditClick(index)}
+                        disabled={scrobbling}
+                        title='Edit metadata'
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          opacity: 0.6,
+                        }}
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

@@ -48,6 +48,9 @@ export interface ScrobbleTrack {
   duration?: number;
   albumCover?: string;
   scrobbleStatus?: 'success' | 'failed' | 'ignored';
+  originalArtist?: string;
+  originalAlbum?: string;
+  originalTrack?: string;
 }
 
 export interface ScrobbleSession {
