@@ -1,10 +1,10 @@
 # Discogs to Last.fm Scrobbler
 
-[![CI](https://github.com/magearwhig/scrobblemyrecords/actions/workflows/ci.yml/badge.svg)](https://github.com/magearwhig/scrobblemyrecords/actions/workflows/ci.yml)
+[![CI](https://github.com/lekfinha/discogscrobbler/actions/workflows/ci.yml/badge.svg)](https://github.com/lekfinha/discogscrobbler/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
-[![Last Commit](https://img.shields.io/github/last-commit/magearwhig/scrobblemyrecords)](https://github.com/magearwhig/scrobblemyrecords/commits/main)
-[![Code Coverage](https://img.shields.io/badge/coverage-4131%20tests-brightgreen)](https://github.com/magearwhig/scrobblemyrecords)
+[![Last Commit](https://img.shields.io/github/last-commit/lekfinha/discogscrobbler)](https://github.com/lekfinha/discogscrobbler/commits/main)
+[![Code Coverage](https://img.shields.io/badge/coverage-4131%20tests-brightgreen)](https://github.com/lekfinha/discogscrobbler)
 
 🎵 **Sync your Discogs vinyl collection to Last.fm automatically!**
 
@@ -14,7 +14,9 @@ A modern web application that bridges your Discogs collection with Last.fm scrob
 
 - **Browse Your Collection**: View your entire Discogs vinyl collection with search and filtering
 - **Smart Scrobbling**: Select individual tracks or entire albums to scrobble
-- **Batch Operations**: Scrobble multiple albums at once with progress tracking
+- **Manual Metadata Overrides**: Fix naming mismatches inline before scrobbling (e.g. disambiguation numbers) and auto-save adjustments for future listens
+- **Album Multipliers**: Scrobble the same album multiple times at once for repeat listening sessions
+- **Batch Operations**: Scrobble multiple albums at once with real-time animated progress tracking
 - **Time Control**: Auto timing (as if you just finished listening) or set custom timestamps for your scrobbles
 - **Local-first**: Runs on your machine (browser UI + local Node/Express API) - your data stays on your computer
 - **Caching**: 24-hour cache keeps your collection loading fast
