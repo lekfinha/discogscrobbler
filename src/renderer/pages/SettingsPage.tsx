@@ -15,7 +15,6 @@ import {
   SettingsIntegrationsSection,
   SettingsMappingsSection,
   SettingsFiltersSection,
-  SettingsWishlistSection,
   SettingsBackupSection,
 } from '../components/settings';
 import { useApp } from '../context/AppContext';
@@ -31,7 +30,6 @@ type SettingsTab =
   | 'integrations'
   | 'mappings'
   | 'filters'
-  | 'wishlist'
   | 'backup';
 
 interface TabConfig {
@@ -50,9 +48,9 @@ const TABS: TabConfig[] = [
   },
   {
     id: 'integrations',
-    label: 'Integrations',
+    label: 'Sync & Cache',
     icon: <Plug size={16} aria-hidden='true' />,
-    description: 'Sync & AI connections',
+    description: 'Scrobble Sync & Discogs Cache',
   },
   {
     id: 'mappings',
@@ -66,12 +64,7 @@ const TABS: TabConfig[] = [
     icon: <Eye size={16} aria-hidden='true' />,
     description: 'Hidden items',
   },
-  {
-    id: 'wishlist',
-    label: 'Wishlist',
-    icon: <Music size={16} aria-hidden='true' />,
-    description: 'Wishlist & sellers',
-  },
+
   {
     id: 'backup',
     label: 'Backup',
@@ -181,8 +174,7 @@ const SettingsPage: React.FC = () => {
         return <SettingsMappingsSection api={api} />;
       case 'filters':
         return <SettingsFiltersSection api={api} />;
-      case 'wishlist':
-        return <SettingsWishlistSection api={api} />;
+
       case 'backup':
         return <SettingsBackupSection api={api} />;
       default:

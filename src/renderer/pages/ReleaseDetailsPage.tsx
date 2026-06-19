@@ -1002,7 +1002,7 @@ const ReleaseDetailsPage: React.FC = () => {
             </div>
 
             {/* Discard pile button */}
-            {collectionItemId && (
+            {false && (
               <div className='release-details-button-container'>
                 {isInDiscardPile ? (
                   <span className='release-details-discard-indicator'>

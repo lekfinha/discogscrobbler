@@ -14,7 +14,7 @@ type AppAction =
   | { type: 'SET_SERVER_URL'; payload: string }
   | { type: 'CLEAR_ERROR' };
 
-const getBaseUrl = () => {
+export const getBaseUrl = () => {
   const port = process.env.REACT_APP_BACKEND_PORT || '3001';
   let hostname = '127.0.0.1';
   if (typeof window !== 'undefined') {

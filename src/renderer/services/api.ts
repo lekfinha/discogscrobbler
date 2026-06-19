@@ -690,7 +690,7 @@ class ApiService {
       estimatedSizeBytes: number;
     };
   }> {
-    const response = await this.api.get('/suggestions/history/status');
+    const response = await this.api.get('/sync/status');
     return response.data.data;
   }
 
@@ -698,7 +698,7 @@ class ApiService {
     message: string;
     status: SyncStatus;
   }> {
-    const response = await this.api.post('/suggestions/history/sync/start', {
+    const response = await this.api.post('/sync/sync/start', {
       incremental,
     });
     return response.data.data;
@@ -708,7 +708,7 @@ class ApiService {
     message: string;
     status: SyncStatus;
   }> {
-    const response = await this.api.post('/suggestions/history/sync/pause');
+    const response = await this.api.post('/sync/sync/pause');
     return response.data.data;
   }
 
@@ -716,16 +716,16 @@ class ApiService {
     message: string;
     status: SyncStatus;
   }> {
-    const response = await this.api.post('/suggestions/history/sync/resume');
+    const response = await this.api.post('/sync/sync/resume');
     return response.data.data;
   }
 
   async clearHistoryIndex(): Promise<void> {
-    await this.api.delete('/suggestions/history/index');
+    await this.api.delete('/sync/index');
   }
 
   async getSyncSettings(): Promise<SyncSettings> {
-    const response = await this.api.get('/suggestions/history/sync/settings');
+    const response = await this.api.get('/sync/sync/settings');
     return response.data.data;
   }
 
@@ -733,7 +733,7 @@ class ApiService {
     settings: Partial<SyncSettings>
   ): Promise<SyncSettings> {
     const response = await this.api.post(
-      '/suggestions/history/sync/settings',
+      '/sync/sync/settings',
       settings
     );
     return response.data.data;
@@ -769,7 +769,7 @@ class ApiService {
     if (search) {
       params.search = search;
     }
-    const response = await this.api.get('/suggestions/history/albums', {
+    const response = await this.api.get('/sync/albums', {
       params,
     });
     return response.data.data;
@@ -811,7 +811,7 @@ class ApiService {
     if (search) {
       params.search = search;
     }
-    const response = await this.api.get('/suggestions/history/tracks', {
+    const response = await this.api.get('/sync/tracks', {
       params,
     });
     return response.data.data;
@@ -847,7 +847,7 @@ class ApiService {
     if (search) {
       params.search = search;
     }
-    const response = await this.api.get('/suggestions/history/artists', {
+    const response = await this.api.get('/sync/artists', {
       params,
     });
     return response.data.data;

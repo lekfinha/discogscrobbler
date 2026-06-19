@@ -74,7 +74,7 @@ const AlbumCard: React.FC<AlbumCardProps> = ({
         {!getImageUrl(release.cover_image) && (
           <Music size={32} aria-hidden='true' />
         )}
-        {isInDiscardPile && (
+        {false && (
           <span className='discard-pile-badge' title='In Discard Pile'>
             <Package size={14} aria-hidden='true' />
           </span>
@@ -142,14 +142,14 @@ const AlbumCard: React.FC<AlbumCardProps> = ({
           View Details
         </Button>
 
-        {onAddToDiscardPile && !isInDiscardPile && (
+        {false && (
           <Button
             variant='warning'
             size='small'
             onClick={e => {
               e.preventDefault();
               e.stopPropagation();
-              onAddToDiscardPile(item);
+              onAddToDiscardPile?.(item);
             }}
             title='Add to discard pile'
           >
@@ -157,7 +157,7 @@ const AlbumCard: React.FC<AlbumCardProps> = ({
           </Button>
         )}
 
-        {isInDiscardPile && (
+        {false && (
           <span className='discard-pile-indicator'>In Discard Pile</span>
         )}
       </div>

@@ -3,18 +3,11 @@ import {
   Brain,
   ChevronLeft,
   ChevronRight,
-  Dices,
   Disc3,
   FileText,
-  Gift,
   Home,
-  Package,
-  Search,
   Settings,
-  Sparkles,
-  Store,
-  TrendingUp,
-} from 'lucide-react';
+  } from 'lucide-react';
 import React, { useEffect } from 'react';
 
 import { useAuth } from '../context/AuthContext';
@@ -97,33 +90,11 @@ const Sidebar: React.FC<SidebarProps> = ({
           enabled: authStatus.discogs.authenticated,
           disabledReason: discogsReason,
         },
-        {
-          id: ROUTES.DISCARD_PILE,
-          label: 'Discard Pile',
-          icon: <Package size={18} aria-hidden='true' />,
-          enabled: authStatus.discogs.authenticated,
-          disabledReason: discogsReason,
-        },
-        {
-          id: ROUTES.COLLECTION_ANALYTICS,
-          label: 'Collection Analytics',
-          icon: <TrendingUp size={18} aria-hidden='true' />,
-          enabled: authStatus.discogs.authenticated,
-          disabledReason: discogsReason,
-        },
       ],
     },
     {
       label: 'Listening',
       items: [
-        {
-          id: ROUTES.WHAT_TO_PLAY,
-          label: 'What to Play',
-          icon: <Dices size={18} aria-hidden='true' />,
-          enabled:
-            authStatus.discogs.authenticated && authStatus.lastfm.authenticated,
-          disabledReason: bothReason,
-        },
         {
           id: ROUTES.HISTORY,
           label: 'Scrobble History',
@@ -142,40 +113,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           id: ROUTES.STATS,
           label: 'Stats Dashboard',
           icon: <BarChart3 size={18} aria-hidden='true' />,
-          enabled: authStatus.lastfm.authenticated,
-          disabledReason: lastfmReason,
-        },
-        {
-          id: ROUTES.WRAPPED,
-          label: 'Wrapped',
-          icon: <Gift size={18} aria-hidden='true' />,
-          enabled: authStatus.lastfm.authenticated,
-          disabledReason: lastfmReason,
-        },
-      ],
-    },
-    {
-      label: 'Discover',
-      items: [
-        {
-          id: ROUTES.RECOMMENDATIONS,
-          label: 'Recommendations',
-          icon: <Sparkles size={18} aria-hidden='true' />,
-          enabled:
-            authStatus.discogs.authenticated && authStatus.lastfm.authenticated,
-          disabledReason: bothReason,
-        },
-        {
-          id: ROUTES.MARKETPLACE,
-          label: 'Marketplace',
-          icon: <Store size={18} aria-hidden='true' />,
-          enabled: authStatus.discogs.authenticated,
-          disabledReason: discogsReason,
-        },
-        {
-          id: ROUTES.DISCOVERY,
-          label: 'Discovery',
-          icon: <Search size={18} aria-hidden='true' />,
           enabled: authStatus.lastfm.authenticated,
           disabledReason: lastfmReason,
         },

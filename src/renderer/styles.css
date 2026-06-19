@@ -1066,7 +1066,7 @@ select.form-input:disabled {
   gap: 0.75rem;
   transition: border-color 0.15s ease;
   cursor: pointer;
-  min-height: auto;
+  height: 100%;
   contain: layout style; /* Optimize rendering performance */
 }
 

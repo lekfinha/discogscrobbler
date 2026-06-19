@@ -22,10 +22,6 @@ const PAGE_NAMES: Record<string, string> = {
   [ROUTES.STATS]: 'Stats',
   [ROUTES.HISTORY]: 'History',
   [ROUTES.COLLECTION]: 'Collection',
-  [ROUTES.DISCOVERY]: 'Discovery',
-  [ROUTES.DISCARD_PILE]: 'Discard Pile',
-  [ROUTES.WHAT_TO_PLAY]: 'What to Play',
-  [ROUTES.WRAPPED]: 'Wrapped',
   [ROUTES.ARTIST_DETAIL]: 'Artist',
 };
 

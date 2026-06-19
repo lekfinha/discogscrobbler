@@ -22,7 +22,7 @@ interface VirtualizedCollectionGridProps {
 
 const CARD_MIN_WIDTH = 280;
 const CARD_GAP = 24; // 1.5rem
-const ROW_HEIGHT = 400; // Slightly above min-height: 380px + gap
+const ROW_HEIGHT = 535; // Provide enough height for image + title + metadata + buttons
 
 const VirtualizedCollectionGrid: React.FC<VirtualizedCollectionGridProps> = ({
   items,

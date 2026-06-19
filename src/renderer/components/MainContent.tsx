@@ -5,17 +5,8 @@ import { ROUTES } from '../routes';
 
 // Lazy-load all pages except HomePage (default route, should load instantly)
 const ArtistDetailPage = React.lazy(() => import('../pages/ArtistDetailPage'));
-const CollectionAnalyticsPage = React.lazy(
-  () => import('../pages/CollectionAnalyticsPage')
-);
 const CollectionPage = React.lazy(() => import('../pages/CollectionPage'));
-const DiscardPilePage = React.lazy(() => import('../pages/DiscardPilePage'));
-const DiscoveryPage = React.lazy(() => import('../pages/DiscoveryPage'));
 const HistoryPage = React.lazy(() => import('../pages/HistoryPage'));
-const MarketplacePage = React.lazy(() => import('../pages/MarketplacePage'));
-const RecommendationsPage = React.lazy(
-  () => import('../pages/RecommendationsPage')
-);
 const ReleaseDetailsPage = React.lazy(
   () => import('../pages/ReleaseDetailsPage')
 );
@@ -23,11 +14,9 @@ const ScrobblePage = React.lazy(() => import('../pages/ScrobblePage'));
 const SettingsPage = React.lazy(() => import('../pages/SettingsPage'));
 const StatsPage = React.lazy(() => import('../pages/StatsPage'));
 const TrackDetailPage = React.lazy(() => import('../pages/TrackDetailPage'));
-const WhatToPlayPage = React.lazy(() => import('../pages/WhatToPlayPage'));
 const MemoryScrobblePage = React.lazy(
   () => import('../pages/MemoryScrobblePage')
 );
-const WrappedPage = React.lazy(() => import('../pages/WrappedPage'));
 
 const PageLoadingFallback: React.FC = () => (
   <div className='page-loading-fallback'>
@@ -72,27 +61,13 @@ const MainContent: React.FC<MainContentProps> = ({ currentPage }) => {
       case ROUTES.RELEASE_DETAILS:
         // Use key to force remount when a different release is selected
         return <ReleaseDetailsPage key={releaseKey} />;
-      case ROUTES.MARKETPLACE:
-        return <MarketplacePage />;
-      case ROUTES.WHAT_TO_PLAY:
-        return <WhatToPlayPage />;
-      case ROUTES.DISCOVERY:
-        return <DiscoveryPage />;
-      case ROUTES.STATS:
+                        case ROUTES.STATS:
         return <StatsPage />;
-      case ROUTES.DISCARD_PILE:
-        return <DiscardPilePage />;
-      case ROUTES.COLLECTION_ANALYTICS:
-        return <CollectionAnalyticsPage />;
-      case ROUTES.WRAPPED:
-        return <WrappedPage />;
-      case ROUTES.ARTIST_DETAIL:
+                        case ROUTES.ARTIST_DETAIL:
         return <ArtistDetailPage key={artistKey} />;
       case ROUTES.TRACK_DETAIL:
         return <TrackDetailPage key={trackKey} />;
-      case ROUTES.RECOMMENDATIONS:
-        return <RecommendationsPage />;
-      case ROUTES.MEMORY_SCROBBLE:
+            case ROUTES.MEMORY_SCROBBLE:
         return <MemoryScrobblePage />;
       default:
         return <HomePage />;

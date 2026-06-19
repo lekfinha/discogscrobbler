@@ -15,15 +15,11 @@ import {
 import { AnalyticsService } from '../services/analyticsService';
 import { artistMappingService } from '../services/artistMappingService';
 import { AuthService } from '../services/authService';
-import { GenreAnalysisService } from '../services/genreAnalysisService';
 import { HistoryIndexMergeService } from '../services/historyIndexMergeService';
 import { ImageService } from '../services/imageService';
 import { MappingService } from '../services/mappingService';
-import { RankingsService } from '../services/rankingsService';
 import { ScrobbleHistoryStorage } from '../services/scrobbleHistoryStorage';
-import { SellerMonitoringService } from '../services/sellerMonitoringService';
 import { StatsService } from '../services/statsService';
-import { WishlistService } from '../services/wishlistService';
 import { getAllCachedCollectionItems } from '../utils/collectionCache';
 import { FileStorage } from '../utils/fileStorage';
 import { createLogger } from '../utils/logger';
@@ -36,15 +32,10 @@ export default function createStatsRouter(
   authService: AuthService,
   statsService: StatsService,
   historyStorage?: ScrobbleHistoryStorage,
-  wishlistService?: WishlistService,
-  sellerMonitoringService?: SellerMonitoringService,
   analyticsService?: AnalyticsService,
-  rankingsService?: RankingsService,
   mappingService?: MappingService,
   historyIndexMergeService?: HistoryIndexMergeService,
-  imageService?: ImageService,
-  genreAnalysisService?: GenreAnalysisService
-) {
+  imageService?: ImageService) {
   const router = express.Router();
   const logger = createLogger('StatsRoutes');
 
@@ -145,12 +136,6 @@ export default function createStatsRouter(
         (async (): Promise<DashboardQuickActions> => {
           // Get seller matches count
           let newSellerMatches = 0;
-          if (sellerMonitoringService) {
-            const matches = await sellerMonitoringService.getAllMatches();
-            newSellerMatches = matches.filter(
-              m => m.status === 'active'
-            ).length;
-          }
 
           // Get missing albums count using analytics service
           let missingAlbumsCount = 0;
@@ -166,13 +151,6 @@ export default function createStatsRouter(
 
           // Get want list count (Discogs wantlist + local want list)
           let wantListCount = 0;
-          if (wishlistService) {
-            const [discogs, local] = await Promise.all([
-              wishlistService.getWishlistItems(),
-              wishlistService.getLocalWantList(),
-            ]);
-            wantListCount = discogs.length + local.length;
-          }
 
           // Get dusty corners count
           let dustyCornersCount = 0;
@@ -1338,7 +1316,7 @@ export default function createStatsRouter(
 
       res.json({
         success: true,
-        data,
+        data: data,
       });
     } catch (error) {
       logger.error('Error getting hourly distribution', error);
@@ -1361,7 +1339,7 @@ export default function createStatsRouter(
 
         res.json({
           success: true,
-          data,
+          data: data,
         });
       } catch (error) {
         logger.error('Error getting day-of-week distribution', error);
@@ -1383,12 +1361,6 @@ export default function createStatsRouter(
    */
   router.get('/rankings-over-time', async (req: Request, res: Response) => {
     try {
-      if (!rankingsService) {
-        return res.status(501).json({
-          success: false,
-          error: 'Rankings service not available',
-        });
-      }
 
       // Extract query parameters
       const type = (req.query.type as string) || 'artists';
@@ -1416,16 +1388,10 @@ export default function createStatsRouter(
         });
       }
 
-      const response = await rankingsService.getRankingsOverTime(
-        type as 'tracks' | 'artists' | 'albums',
-        topN,
-        startDate,
-        endDate
-      );
-
+      
       res.json({
         success: true,
-        data: response,
+        data: [],
       });
     } catch (error) {
       logger.error('Error getting rankings over time', error);
@@ -1566,24 +1532,14 @@ export default function createStatsRouter(
    */
   router.get('/genres', async (_req: Request, res: Response) => {
     try {
-      if (!genreAnalysisService) {
-        return res.status(501).json({
-          success: false,
-          error: 'Genre analysis service not available',
-        });
-      }
 
       const limit = parseInt(_req.query.limit as string) || 50;
       const maxTags = parseInt(_req.query.maxTags as string) || 10;
 
-      const data = await genreAnalysisService.getGenreDistribution(
-        limit,
-        maxTags
-      );
-
+      
       res.json({
         success: true,
-        data,
+        data: [],
       });
     } catch (error) {
       logger.error('Error getting genre distribution', error);
@@ -1653,45 +1609,6 @@ export default function createStatsRouter(
   });
 
   /**
-   * GET /api/v1/stats/taste-drift?months=24
-   * Get rolling genre share per quarter for the last N months.
-   */
-  router.get('/taste-drift', async (req: Request, res: Response) => {
-    try {
-      if (!genreAnalysisService) {
-        return res.status(503).json({
-          success: false,
-          error: 'Genre analysis service not available',
-        });
-      }
-
-      const monthsParam = req.query.months as string | undefined;
-      const months = monthsParam ? parseInt(monthsParam, 10) : 24;
-
-      if (isNaN(months) || months < 1) {
-        return res.status(400).json({
-          success: false,
-          error: 'months must be a positive integer',
-        });
-      }
-
-      const data = await genreAnalysisService.getTasteDrift(months);
-      res.json({ success: true, data });
-    } catch (error) {
-      logger.error('Error getting taste drift', error);
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      });
-    }
-  });
-
-  // ============================================
-  // History Index Merge (Split Entry Consolidation)
-  // ============================================
-
-  /**
-   * GET /api/v1/stats/split-entries
    * Dry-run scan: find history index entries that should be merged
    */
   router.get('/split-entries', async (_req: Request, res: Response) => {

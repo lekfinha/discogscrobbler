@@ -1,0 +1,241 @@
+.onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.98));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 9999;
+  animation: fadeIn 0.4s ease-out;
+  padding: 2rem;
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text-color, #e2e8f0);
+}
+
+.onboarding-card {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  width: 100%;
+  max-width: 540px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.onboarding-header {
+  padding: 2rem 2.5rem;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.onboarding-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #fff, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+}
+
+.onboarding-header p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+.onboarding-content {
+  padding: 2.5rem;
+  flex: 1;
+}
+
+.onboarding-step {
+  display: none;
+  animation: fadeInStep 0.4s ease-out forwards;
+}
+
+.onboarding-step.active {
+  display: block;
+}
+
+.onboarding-step h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #f8fafc;
+}
+
+.onboarding-step-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--accent-color, #38bdf8);
+}
+
+.onboarding-step p {
+  color: #cbd5e1;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 2rem;
+}
+
+.onboarding-input-group {
+  margin-bottom: 1.5rem;
+}
+
+.onboarding-input {
+  width: 100%;
+  padding: 1rem 1.25rem;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: white;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.onboarding-input:focus {
+  border-color: var(--accent-color, #38bdf8);
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.onboarding-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.onboarding-btn {
+  padding: 0.75rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+}
+
+.onboarding-btn.primary {
+  background: var(--accent-color, #38bdf8);
+  color: #0f172a;
+}
+
+.onboarding-btn.primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+  filter: brightness(1.1);
+}
+
+.onboarding-btn.secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.onboarding-btn.secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.onboarding-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.onboarding-progress {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  background: rgba(15, 23, 42, 0.4);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.progress-dot.active {
+  background: var(--accent-color, #38bdf8);
+  transform: scale(1.2);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}
+
+.progress-dot.completed {
+  background: #10b981;
+}
+
+.onboarding-status-message {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.onboarding-status-message.error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.onboarding-status-message.success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+}
+
+.sync-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--accent-color, #38bdf8);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 2rem auto;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; backdrop-filter: blur(0); }
+  to { opacity: 1; backdrop-filter: blur(16px); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeInStep {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}

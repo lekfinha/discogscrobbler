@@ -26,7 +26,6 @@ import {
   StatDetailsModal,
 } from '../components/dashboard';
 import { StatType } from '../components/dashboard/StatDetailsModal';
-import { SetupProgress } from '../components/SetupProgress';
 import { CalendarHeatmap } from '../components/stats/CalendarHeatmap';
 import { MilestoneProgress } from '../components/stats/MilestoneProgress';
 import { OnThisDay } from '../components/stats/OnThisDay';
@@ -295,10 +294,7 @@ const HomePage: React.FC = () => {
       />
 
       {/* Setup Progress Banner (auto-hides when complete) */}
-      <SetupProgress
-        authStatus={authStatus}
-        hasSyncedHistory={hasSyncedHistory}
-      />
+      
 
       {/* Quick Stats Row */}
       {quickStats && (

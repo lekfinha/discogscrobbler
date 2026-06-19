@@ -1383,7 +1383,7 @@ const CollectionPage: React.FC = () => {
                   selected={selectedAlbums.has(item.release.id)}
                   onSelect={() => handleAlbumSelect(item.release.id)}
                   onViewDetails={release => handleViewDetails(release, item)}
-                  isInDiscardPile={discardPileIds.has(item.id)}
+                  isInDiscardPile={false}
                   onAddToDiscardPile={handleOpenDiscardModal}
                   playCount={pcData?.playCount}
                   lastPlayed={pcData?.lastPlayed}
@@ -1456,7 +1456,7 @@ const CollectionPage: React.FC = () => {
                   onViewDetails={release =>
                     handleViewDetails(release, currentItem)
                   }
-                  isInDiscardPile={discardPileIds.has(currentItem.id)}
+                  isInDiscardPile={false}
                   onAddToDiscardPile={handleOpenDiscardModal}
                   playCount={pcData?.playCount}
                   lastPlayed={pcData?.lastPlayed}
@@ -1490,7 +1490,7 @@ const CollectionPage: React.FC = () => {
               >
                 Clear Selection
               </Button>
-              {selectedNotInDiscardCount > 0 && (
+              {false && (
                 <Button
                   variant='warning'
                   size='small'

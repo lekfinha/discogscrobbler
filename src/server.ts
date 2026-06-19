@@ -15,37 +15,21 @@ import { createArtistMappingRouter } from './backend/routes/artistMapping';
 import { createAuthRouter } from './backend/routes/auth';
 import createBackupRouter from './backend/routes/backup';
 import createCollectionRouter from './backend/routes/collection';
-import createCollectionAnalyticsRouter from './backend/routes/collectionAnalytics';
-import createDiscardPileRouter from './backend/routes/discardPile';
-import { createEmbeddingsRouter } from './backend/routes/embeddings';
 import createImagesRouter from './backend/routes/images';
 import jobsRouter from './backend/routes/jobs';
 import { createMemoryScrobbleRouter } from './backend/routes/memoryScrobble';
-import { createRecommendationsRouter } from './backend/routes/recommendations';
-import createReleasesRouter from './backend/routes/releases';
 import createScrobbleRouter from './backend/routes/scrobble';
 import scrobbleMappingsRouter from './backend/routes/scrobbleMappings';
-import createSellersRouter from './backend/routes/sellers';
 import createStatsRouter from './backend/routes/stats';
-import createSuggestionsRouter from './backend/routes/suggestions';
-import createWishlistRouter from './backend/routes/wishlist';
-import createWrappedRouter from './backend/routes/wrapped';
+import createSyncRouter from './backend/routes/sync';
 import { AnalyticsService } from './backend/services/analyticsService';
 import { artistMappingService } from './backend/services/artistMappingService';
 import { ArtistNameResolver } from './backend/services/artistNameResolver';
-import { ArtistSimilarityEnricherService } from './backend/services/artistSimilarityEnricherService';
-import { ArtistSimilarityStorageService } from './backend/services/artistSimilarityStorageService';
 import { AuthService } from './backend/services/authService';
 import { BackupService } from './backend/services/backupService';
 import { CleanupService } from './backend/services/cleanupService';
-import { CollectionAnalyticsService } from './backend/services/collectionAnalyticsService';
-import { CollectionIndexerService } from './backend/services/collectionIndexerService';
-import { DiscardPileService } from './backend/services/discardPileService';
-import { DiscogsGenreEnricherService } from './backend/services/discogsGenreEnricherService';
 import { DiscogsService } from './backend/services/discogsService';
 import { DurationLookupService } from './backend/services/durationLookupService';
-import { EmbeddingStorageService } from './backend/services/embeddingStorageService';
-import { GenreAnalysisService } from './backend/services/genreAnalysisService';
 import { HiddenItemService } from './backend/services/hiddenItemService';
 import { HiddenReleasesService } from './backend/services/hiddenReleasesService';
 import { HistoryIndexMergeService } from './backend/services/historyIndexMergeService';
@@ -54,27 +38,12 @@ import { LastFmService } from './backend/services/lastfmService';
 import { ListeningSessionStorageService } from './backend/services/listeningSessionStorageService';
 import { MappingService } from './backend/services/mappingService';
 import { MigrationService } from './backend/services/migrationService';
-import { MusicBrainzGenreEnricherService } from './backend/services/musicbrainzGenreEnricherService';
 import { MusicBrainzService } from './backend/services/musicbrainzService';
-import { OllamaEmbedderService } from './backend/services/ollamaEmbedderService';
-import { OllamaService } from './backend/services/ollamaService';
-import { ProfileBuilderService } from './backend/services/profileBuilderService';
-import { RankingsService } from './backend/services/rankingsService';
-import { RecommendationLogService } from './backend/services/recommendationLogService';
-import { RecommendationService } from './backend/services/recommendationService';
-import { ReleaseTrackingService } from './backend/services/releaseTrackingService';
 import { SavedCollectionService } from './backend/services/savedCollectionService';
-import { ScoringEngineService } from './backend/services/scoringEngineService';
 import { ScrobbleHistoryStorage } from './backend/services/scrobbleHistoryStorage';
 import { ScrobbleHistorySyncService } from './backend/services/scrobbleHistorySyncService';
-import { SellerMonitoringService } from './backend/services/sellerMonitoringService';
-import { SessionEmbedderService } from './backend/services/sessionEmbedderService';
 import { StatsService } from './backend/services/statsService';
-import { SuggestionService } from './backend/services/suggestionService';
-import { TagEnricherService } from './backend/services/tagEnricherService';
 import { TrackMappingService } from './backend/services/trackMappingService';
-import { WishlistService } from './backend/services/wishlistService';
-import { WrappedService } from './backend/services/wrappedService';
 import { sendError } from './backend/utils/apiResponse';
 import { FileStorage } from './backend/utils/fileStorage';
 import { createLogger } from './backend/utils/logger';
@@ -315,11 +284,6 @@ const hiddenItemService = new HiddenItemService(fileStorage);
 const hiddenReleasesService = new HiddenReleasesService(fileStorage);
 const analyticsService = new AnalyticsService(historyStorage, lastfmService);
 analyticsService.setMappingService(mappingService);
-const suggestionService = new SuggestionService(
-  analyticsService,
-  historyStorage
-);
-suggestionService.setMappingService(mappingService);
 const statsService = new StatsService(fileStorage, historyStorage);
 statsService.setTrackMappingService(trackMappingService);
 statsService.setMappingService(mappingService);
@@ -327,47 +291,15 @@ statsService.setMappingService(mappingService);
 // Wire up stats cache warming: after each sync StatsService precomputes
 // expensive stats and persists them so dashboard reads are instant.
 syncService.setStatsWarmer(statsService);
-const rankingsService = new RankingsService(historyStorage);
 const imageService = new ImageService(fileStorage, lastfmService);
 imageService.setMappingService(mappingService);
-const wishlistService = new WishlistService(fileStorage, authService);
-const collectionAnalyticsService = new CollectionAnalyticsService(
-  fileStorage,
-  authService,
-  wishlistService
-);
-const sellerMonitoringService = new SellerMonitoringService(
-  fileStorage,
-  authService,
-  wishlistService
-);
 const musicBrainzService = new MusicBrainzService();
-const releaseTrackingService = new ReleaseTrackingService(
-  fileStorage,
-  discogsService,
-  musicBrainzService,
-  wishlistService,
-  hiddenReleasesService
-);
 const backupService = new BackupService(fileStorage, 'data');
-const discardPileService = new DiscardPileService(fileStorage);
 const savedCollectionService = new SavedCollectionService(fileStorage);
 const durationLookupService = new DurationLookupService(
   fileStorage,
   lastfmService,
   discogsService
-);
-const genreAnalysisService = new GenreAnalysisService(
-  lastfmService,
-  historyStorage,
-  fileStorage
-);
-const wrappedService = new WrappedService(
-  statsService,
-  historyStorage,
-  discogsService,
-  imageService,
-  fileStorage
 );
 
 // API routes
@@ -395,32 +327,7 @@ app.use(
   '/api/v1/images',
   createImagesRouter(fileStorage, authService, imageService)
 );
-app.use(
-  '/api/v1/wishlist',
-  createWishlistRouter(
-    fileStorage,
-    authService,
-    wishlistService,
-    sellerMonitoringService
-  )
-);
-app.use(
-  '/api/v1/sellers',
-  createSellersRouter(fileStorage, authService, sellerMonitoringService)
-);
-app.use(
-  '/api/v1/releases',
-  createReleasesRouter(
-    authService,
-    releaseTrackingService,
-    hiddenReleasesService
-  )
-);
 app.use('/api/v1/backup', createBackupRouter(backupService));
-app.use(
-  '/api/v1/discard-pile',
-  createDiscardPileRouter(discardPileService, wishlistService)
-);
 app.use(
   '/api/v1/memory-scrobble',
   createMemoryScrobbleRouter(
@@ -430,16 +337,8 @@ app.use(
   )
 );
 app.use('/api/v1/scrobble-mappings', scrobbleMappingsRouter);
-app.use('/api/v1/wrapped', createWrappedRouter(wrappedService));
-app.use(
-  '/api/v1/collection-analytics',
-  createCollectionAnalyticsRouter(
-    fileStorage,
-    authService,
-    collectionAnalyticsService
-  )
-);
 app.use('/api/v1/jobs', jobsRouter);
+  app.use('/api/v1/sync', createSyncRouter(syncService, historyStorage));
 
 // API info endpoint
 app.get('/api/v1', (req, res) => {
@@ -559,29 +458,9 @@ async function startServer() {
       createArtistMappingRouter(artistNameResolver)
     );
 
-    // Mount suggestions routes now that artistNameResolver is available
-    app.use(
-      '/api/v1/suggestions',
-      createSuggestionsRouter(
-        fileStorage,
-        authService,
-        discogsService,
-        historyStorage,
-        syncService,
-        analyticsService,
-        suggestionService,
-        mappingService,
-        trackMappingService,
-        hiddenItemService,
-        statsService,
-        artistNameResolver
-      )
-    );
-
     // Inject resolver into services that support artist name resolution
     statsService.setArtistNameResolver(artistNameResolver);
     historyStorage.setArtistNameResolver(artistNameResolver);
-    wrappedService.setArtistNameResolver(artistNameResolver);
 
     // Create merge service for detecting and merging split history index entries
     const historyIndexMergeService = new HistoryIndexMergeService(
@@ -605,99 +484,12 @@ async function startServer() {
         authService,
         statsService,
         historyStorage,
-        wishlistService,
-        sellerMonitoringService,
         analyticsService,
-        rankingsService,
-        mappingService,
-        historyIndexMergeService,
-        imageService,
-        genreAnalysisService
+        mappingService, historyIndexMergeService, imageService
       )
     );
 
     // Instantiate embedding & recommendation services
-    const embeddingStorageService = new EmbeddingStorageService(fileStorage);
-    const tagEnricherService = new TagEnricherService(
-      lastfmService,
-      embeddingStorageService
-    );
-    const artistSimilarityStorageService = new ArtistSimilarityStorageService(
-      fileStorage
-    );
-    const artistSimilarityEnricherService = new ArtistSimilarityEnricherService(
-      lastfmService,
-      artistSimilarityStorageService
-    );
-    const discogsGenreEnricherService = new DiscogsGenreEnricherService(
-      discogsService
-    );
-    const musicBrainzGenreEnricherService = new MusicBrainzGenreEnricherService(
-      musicBrainzService,
-      releaseTrackingService,
-      fileStorage
-    );
-    const profileBuilderService = new ProfileBuilderService(
-      tagEnricherService,
-      artistSimilarityEnricherService,
-      mappingService,
-      musicBrainzGenreEnricherService
-    );
-    const ollamaService = new OllamaService();
-    const ollamaEmbedderService = new OllamaEmbedderService(ollamaService);
-    const listeningSessionStorageService = new ListeningSessionStorageService(
-      fileStorage
-    );
-    const sessionEmbedderService = new SessionEmbedderService(
-      ollamaEmbedderService,
-      listeningSessionStorageService
-    );
-    const collectionIndexerService = new CollectionIndexerService(
-      ollamaEmbedderService,
-      embeddingStorageService
-    );
-    const recommendationLogService = new RecommendationLogService(fileStorage);
-    const scoringEngineService = new ScoringEngineService(
-      artistSimilarityStorageService,
-      recommendationLogService
-    );
-    const recommendationService = new RecommendationService(
-      embeddingStorageService,
-      scoringEngineService,
-      sessionEmbedderService,
-      profileBuilderService,
-      collectionIndexerService,
-      recommendationLogService,
-      fileStorage,
-      artistSimilarityStorageService,
-      historyStorage
-    );
-
-    // Mount embedding & recommendation routes
-    app.use(
-      '/api/v1/embeddings',
-      createEmbeddingsRouter(
-        collectionIndexerService,
-        embeddingStorageService,
-        profileBuilderService,
-        discogsService,
-        authService,
-        fileStorage,
-        discogsGenreEnricherService,
-        musicBrainzGenreEnricherService
-      )
-    );
-    app.use(
-      '/api/v1/recommendations',
-      createRecommendationsRouter(
-        recommendationService,
-        lastfmService,
-        authService,
-        fileStorage
-      )
-    );
-
-    // Error handling middleware (registered after all routes including stats)
     app.use(
       (
         err: Error,
