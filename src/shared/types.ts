@@ -83,9 +83,12 @@ export interface CollectionFilterPreset {
 export interface UserSettings {
   discogs: {
     username?: string;
+    clientId?: string;
+    clientSecret?: string;
   };
   lastfm: {
     apiKey?: string;
+    apiSecret?: string;
     sessionKey?: string;
     username?: string;
   };
@@ -112,9 +115,11 @@ export interface ApiResponse<T> {
 }
 
 export interface AuthStatus {
+  setupComplete?: boolean;
   discogs: {
     authenticated: boolean;
     username?: string;
+    hasAppCredentials?: boolean;
   };
   lastfm: {
     authenticated: boolean;

@@ -150,6 +150,8 @@ app.use(
         'http://127.0.0.1:8080', // Alternative localhost
         'http://localhost:3000', // Test environment
         'http://127.0.0.1:3000', // Alternative test environment
+        'http://localhost:3001', // Production Docker environment
+        'http://127.0.0.1:3001', // Alternative production Docker environment
         process.env.FRONTEND_URL, // Production frontend URL
       ].filter(Boolean); // Remove undefined entries
 
@@ -455,27 +457,41 @@ async function startServer() {
 
     // Instantiate embedding & recommendation services
     app.use(
-      (
-        err: Error,
-        req: express.Request,
-        res: express.Response,
-        _next: express.NextFunction
-      ) => {
-        log.error('Request error', { message: err.message, path: req.path });
-        sendError(
-          res,
-          500,
-          process.env.NODE_ENV === 'production'
-            ? 'Internal server error'
-            : err.message
-        );
-      }
+        (
+          err: Error,
+          req: express.Request,
+          res: express.Response,
+          _next: express.NextFunction
+        ) => {
+          log.error('Request error', { message: err.message, stack: err.stack, path: req.path });
+          sendError(
+            res,
+            500,
+            err.message || 'Internal server error'
+          );
+        }
     );
 
-    // 404 handler
-    app.use((_req: express.Request, res: express.Response) => {
-      sendError(res, 404, 'Route not found');
-    });
+      // Serve static frontend files if in production (Docker)
+      if (process.env.NODE_ENV === 'production') {
+        const webPath = path.join(process.cwd(), 'dist', 'web');
+        app.use(express.static(webPath));
+        
+        // Handle 404 for unknown API routes
+        app.use('/api/*', (_req: express.Request, res: express.Response) => {
+          sendError(res, 404, 'API Route not found');
+        });
+
+        // Catch-all for React Router
+        app.get('*', (req: express.Request, res: express.Response) => {
+          res.sendFile(path.join(webPath, 'index.html'));
+        });
+      } else {
+        // Handle 404 for all unknown routes in development
+        app.use((_req: express.Request, res: express.Response) => {
+          sendError(res, 404, 'Route not found');
+        });
+      }
 
     // Only start server if not in test environment
     if (process.env.NODE_ENV !== 'test') {

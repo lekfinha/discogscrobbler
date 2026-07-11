@@ -94,15 +94,13 @@ class ApiService {
 
   constructor(baseUrl?: string) {
     if (!baseUrl) {
-      const port = process.env.REACT_APP_BACKEND_PORT || '3001';
-      let hostname = '127.0.0.1';
-      if (typeof window !== 'undefined') {
-        hostname =
-          window.location.hostname === 'localhost'
-            ? '127.0.0.1'
-            : window.location.hostname;
+      if (typeof window !== 'undefined' && window.location.port === '8080') {
+        // Development mode: Webpack dev server is on 8080, backend is on 3001
+        this.baseUrl = 'http://localhost:3001';
+      } else {
+        // Production (Docker) mode: Frontend is served by the backend, use relative paths
+        this.baseUrl = '';
       }
-      this.baseUrl = `http://${hostname}:${port}`;
     } else {
       this.baseUrl = baseUrl;
     }
@@ -135,12 +133,19 @@ class ApiService {
         log.error('API Response Error', {
           code: error.code,
           message: error.message,
+          data: error.response?.data,
         });
+        
         if (error.code === 'ECONNREFUSED') {
-          throw new Error(
-            'Unable to connect to server. Please ensure the backend is running.'
-          );
+          throw new Error('Unable to connect to server. Please ensure the backend is running.');
         }
+
+        // Extract the error message from the backend JSON response if available
+        const backendError = error.response?.data?.error;
+        if (backendError) {
+          throw new Error(backendError);
+        }
+
         throw error;
       }
     );
@@ -243,6 +248,14 @@ class ApiService {
   }
 
   // OAuth methods
+  async updateDiscogsAppCredentials(clientId: string, clientSecret: string): Promise<void> {
+    await this.api.post('/auth/discogs/app-credentials', { clientId, clientSecret });
+  }
+
+  async updateLastfmAppCredentials(apiKey: string, apiSecret: string): Promise<void> {
+    await this.api.post('/auth/lastfm/app-credentials', { apiKey, apiSecret });
+  }
+
   async setDiscogsUsername(username: string): Promise<void> {
     await this.api.post('/auth/discogs/username', { username });
   }

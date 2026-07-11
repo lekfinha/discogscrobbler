@@ -17,6 +17,7 @@ import { useJobPoller } from './hooks/useJobPoller';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { DEFAULT_ROUTE, ROUTE_REDIRECTS, ROUTES, navigate } from './routes';
 import OnboardingFlow from './components/OnboardingFlow';
+import AppSetupFlow from './components/AppSetupFlow';
 import { getApiService } from './services/api';
 
 const JobPollerSetup: React.FC = () => {
@@ -29,6 +30,7 @@ const SIDEBAR_COLLAPSED_KEY = 'sidebar-collapsed';
 const App: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<string>(DEFAULT_ROUTE);
   const [authStatus, setAuthStatus] = useState<AuthStatus>({
+    setupComplete: true, // assume true until loaded
     discogs: { authenticated: false },
     lastfm: { authenticated: false },
   });
@@ -159,6 +161,8 @@ const App: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100vw', background: 'var(--bg-color, #0f172a)' }}>
                   <div className="sync-spinner" style={{ borderColor: 'rgba(255,255,255,0.1)', borderTopColor: '#38bdf8' }} />
                 </div>
+              ) : !authStatus.setupComplete ? (
+                <AppSetupFlow onComplete={() => setAuthStatus(prev => ({ ...prev, setupComplete: true }))} />
               ) : !isOnboardingComplete ? (
                 <OnboardingFlow onComplete={() => setIsOnboardingComplete(true)} />
               ) : (

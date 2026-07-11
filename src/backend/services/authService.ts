@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 import { UserSettings } from '../../shared/types';
 import { EncryptionKeyValidator } from '../utils/encryptionValidator';
@@ -25,12 +27,22 @@ export class AuthService {
   constructor(fileStorage: FileStorage) {
     this.fileStorage = fileStorage;
 
-    // Validate encryption key at startup - no fallback defaults allowed
-    const encryptionKey = process.env.ENCRYPTION_KEY;
+    let encryptionKey = process.env.ENCRYPTION_KEY;
 
     if (!encryptionKey) {
-      EncryptionKeyValidator.validateAndThrow('', 'AuthService');
-      throw new Error('ENCRYPTION_KEY environment variable is required'); // This won't be reached but satisfies TypeScript
+      const dataDir = path.join(process.cwd(), 'data');
+      const keyPath = path.join(dataDir, 'encryption.key');
+      
+      if (fs.existsSync(keyPath)) {
+        encryptionKey = fs.readFileSync(keyPath, 'utf8').trim();
+      } else {
+        encryptionKey = crypto.randomBytes(32).toString('hex');
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
+        fs.writeFileSync(keyPath, encryptionKey, 'utf8');
+        logger.info('Auto-generated new ENCRYPTION_KEY securely and saved to data/encryption.key');
+      }
     }
 
     // Validate key strength and security
@@ -369,15 +381,53 @@ export class AuthService {
 
   async getLastFmCredentials(): Promise<{
     apiKey?: string;
+    apiSecret?: string;
     sessionKey?: string;
     username?: string;
   }> {
     const settings = await this.getUserSettings();
     return {
-      apiKey: settings.lastfm.apiKey,
+      apiKey: settings.lastfm.apiKey || process.env.LASTFM_API_KEY,
+      apiSecret: settings.lastfm.apiSecret || process.env.LASTFM_SECRET,
       sessionKey: settings.lastfm.sessionKey,
       username: settings.lastfm.username,
     };
+  }
+
+  async getDiscogsAppCredentials(): Promise<{ clientId?: string; clientSecret?: string }> {
+    const settings = await this.getUserSettings();
+    return {
+      clientId: settings.discogs.clientId || process.env.DISCOGS_CLIENT_ID,
+      clientSecret: settings.discogs.clientSecret || process.env.DISCOGS_CLIENT_SECRET,
+    };
+  }
+
+  async saveAppCredentials(
+    discogsClientId: string,
+    discogsClientSecret: string,
+    lastfmApiKey: string,
+    lastfmApiSecret: string
+  ): Promise<void> {
+    const settings = await this.getUserSettings();
+    settings.discogs.clientId = discogsClientId;
+    settings.discogs.clientSecret = discogsClientSecret;
+    settings.lastfm.apiKey = lastfmApiKey;
+    settings.lastfm.apiSecret = lastfmApiSecret;
+    await this.saveUserSettings(settings);
+  }
+
+  async updateDiscogsAppCredentials(clientId: string, clientSecret: string): Promise<void> {
+    const settings = await this.getUserSettings();
+    settings.discogs.clientId = clientId;
+    settings.discogs.clientSecret = clientSecret;
+    await this.saveUserSettings(settings);
+  }
+
+  async updateLastfmAppCredentials(apiKey: string, apiSecret: string): Promise<void> {
+    const settings = await this.getUserSettings();
+    settings.lastfm.apiKey = apiKey;
+    settings.lastfm.apiSecret = apiSecret;
+    await this.saveUserSettings(settings);
   }
 
   async clearTokens(): Promise<void> {

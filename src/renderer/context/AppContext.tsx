@@ -15,15 +15,10 @@ type AppAction =
   | { type: 'CLEAR_ERROR' };
 
 export const getBaseUrl = () => {
-  const port = process.env.REACT_APP_BACKEND_PORT || '3001';
-  let hostname = '127.0.0.1';
-  if (typeof window !== 'undefined') {
-    hostname =
-      window.location.hostname === 'localhost'
-        ? '127.0.0.1'
-        : window.location.hostname;
+  if (typeof window !== 'undefined' && window.location.port === '8080') {
+    return 'http://localhost:3001';
   }
-  return `http://${hostname}:${port}`;
+  return '';
 };
 
 const initialState: AppState = {

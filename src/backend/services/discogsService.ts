@@ -37,8 +37,9 @@ export class DiscogsService {
   }
 
   private async getAuthHeaders(): Promise<Record<string, string>> {
-    const key = process.env.DISCOGS_CLIENT_ID || '';
-    const secret = process.env.DISCOGS_CLIENT_SECRET || '';
+    const creds = await this.authService.getDiscogsAppCredentials();
+    const key = creds.clientId || '';
+    const secret = creds.clientSecret || '';
 
     if (key && secret) {
       return {

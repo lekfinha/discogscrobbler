@@ -24,6 +24,65 @@ const SettingsConnectionsSection: React.FC<SettingsConnectionsSectionProps> = ({
   // Manual entry states
   const [discogsUsername, setDiscogsUsername] = useState('');
   const [lastfmToken, setLastfmToken] = useState('');
+  
+  // API Credentials states
+  const [discogsClientId, setDiscogsClientId] = useState('');
+  const [discogsClientSecret, setDiscogsClientSecret] = useState('');
+
+  const handleDiscogsCredentialsSubmit = async () => {
+    setLoading('discogs-creds');
+    setMessage(null);
+    try {
+      await api.updateDiscogsAppCredentials(discogsClientId, discogsClientSecret);
+      
+      const newStatus = await api.getAuthStatus();
+      setAuthStatus(newStatus);
+      
+      setMessage({
+        type: 'success',
+        text: 'Discogs API credentials saved successfully.',
+      });
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text:
+          error instanceof Error
+            ? error.message
+            : 'Failed to save Discogs API credentials',
+      });
+    } finally {
+      setLoading('');
+    }
+  };
+
+  const [lastfmApiKey, setLastfmApiKey] = useState('');
+  const [lastfmApiSecret, setLastfmApiSecret] = useState('');
+
+  const handleLastfmCredentialsSubmit = async () => {
+    setLoading('lastfm-creds');
+    setMessage(null);
+    try {
+      await api.updateLastfmAppCredentials(lastfmApiKey, lastfmApiSecret);
+      
+      const newStatus = await api.getAuthStatus();
+      setAuthStatus(newStatus);
+      
+      setMessage({
+        type: 'success',
+        text: 'Last.fm API credentials saved successfully.',
+      });
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text:
+          error instanceof Error
+            ? error.message
+            : 'Failed to save Last.fm API credentials',
+      });
+    } finally {
+      setLoading('');
+    }
+  };
 
   const handleDiscogsUsernameSubmit = async () => {
     if (!discogsUsername) {
@@ -282,6 +341,42 @@ const SettingsConnectionsSection: React.FC<SettingsConnectionsSectionProps> = ({
             </Button>
           </div>
         </div>
+
+        <div className='alternative-method-section' style={{ marginTop: '20px' }}>
+          <h4>Advanced: Discogs API Credentials</h4>
+          <p>
+            If you have a large collection, you can register an app on Discogs to increase your rate limits.
+            You can enter your API keys here.
+          </p>
+
+          <div className='form-group'>
+            <label className='form-label'>Consumer Key:</label>
+            <input
+              type='text'
+              className='form-input'
+              value={discogsClientId}
+              onChange={e => setDiscogsClientId(e.target.value)}
+              placeholder='Optional'
+            />
+          </div>
+          <div className='form-group'>
+            <label className='form-label'>Consumer Secret:</label>
+            <input
+              type='password'
+              className='form-input'
+              value={discogsClientSecret}
+              onChange={e => setDiscogsClientSecret(e.target.value)}
+              placeholder='Optional'
+            />
+          </div>
+
+          <Button
+            onClick={handleDiscogsCredentialsSubmit}
+            disabled={loading === 'discogs-creds'}
+          >
+            {loading === 'discogs-creds' ? 'Saving...' : 'Save API Credentials'}
+          </Button>
+        </div>
       </div>
 
       {/* Last.fm Setup */}
@@ -311,7 +406,7 @@ const SettingsConnectionsSection: React.FC<SettingsConnectionsSectionProps> = ({
         </Button>
 
         {/* Manual Token Entry */}
-        <div className='alternative-method-section'>
+        <div className='alternative-method-section' style={{ marginTop: '20px' }}>
           <h4>Manual Token Entry:</h4>
           <p>
             If the automatic flow doesn't work, get the authorization URL above,
@@ -342,6 +437,37 @@ const SettingsConnectionsSection: React.FC<SettingsConnectionsSectionProps> = ({
             {loading === 'lastfm-manual'
               ? 'Authenticating...'
               : 'Submit Last.fm Token'}
+          </Button>
+        </div>
+
+        <div className='alternative-method-section' style={{ marginTop: '20px' }}>
+          <h4>Advanced: Last.fm API Credentials</h4>
+          <p>Update your Last.fm application keys if necessary.</p>
+
+          <div className='form-group'>
+            <label className='form-label'>API Key:</label>
+            <input
+              type='text'
+              className='form-input'
+              value={lastfmApiKey}
+              onChange={e => setLastfmApiKey(e.target.value)}
+            />
+          </div>
+          <div className='form-group'>
+            <label className='form-label'>Shared Secret:</label>
+            <input
+              type='password'
+              className='form-input'
+              value={lastfmApiSecret}
+              onChange={e => setLastfmApiSecret(e.target.value)}
+            />
+          </div>
+
+          <Button
+            onClick={handleLastfmCredentialsSubmit}
+            disabled={loading === 'lastfm-creds'}
+          >
+            {loading === 'lastfm-creds' ? 'Saving...' : 'Save API Credentials'}
           </Button>
         </div>
       </div>

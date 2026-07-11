@@ -1,0 +1,19 @@
+services:
+  discogscrobbler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: discogscrobbler
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      # Puedes descomentar las siguientes líneas si prefieres usar variables de entorno en lugar de la configuración inicial en el navegador:
+      # - LASTFM_API_KEY=tu_api_key_aqui
+      # - LASTFM_SECRET=tu_secret_aqui
+      # - DISCOGS_CLIENT_ID=tu_client_id_aqui
+      # - DISCOGS_CLIENT_SECRET=tu_client_secret_aqui

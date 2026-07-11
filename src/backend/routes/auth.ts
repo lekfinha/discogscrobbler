@@ -22,17 +22,79 @@ export function createAuthRouter(
 ): express.Router {
   const router = express.Router();
 
+  // Initial Setup - Save Application API Keys
+  router.post('/app-credentials', async (req: Request, res: Response) => {
+    try {
+      const { discogsClientId, discogsClientSecret, lastfmApiKey, lastfmApiSecret } = req.body;
+      
+      await authService.saveAppCredentials(
+        discogsClientId || '',
+        discogsClientSecret || '',
+        lastfmApiKey || '',
+        lastfmApiSecret || ''
+      );
+
+      res.json({
+        success: true,
+        data: { message: 'Application credentials saved successfully' },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  });
+
+  router.post('/discogs/app-credentials', async (req: Request, res: Response) => {
+    try {
+      const { clientId, clientSecret } = req.body;
+      await authService.updateDiscogsAppCredentials(clientId || '', clientSecret || '');
+      res.json({
+        success: true,
+        data: { message: 'Discogs API credentials updated successfully' },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  });
+
+  router.post('/lastfm/app-credentials', async (req: Request, res: Response) => {
+    try {
+      const { apiKey, apiSecret } = req.body;
+      await authService.updateLastfmAppCredentials(apiKey || '', apiSecret || '');
+      res.json({
+        success: true,
+        data: { message: 'Last.fm API credentials updated successfully' },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  });
+
   // Check authentication status
   router.get('/status', async (req: Request, res: Response) => {
     try {
       const settings = await authService.getUserSettings();
+      const lastfmCreds = await authService.getLastFmCredentials();
+      const discogsCreds = await authService.getDiscogsAppCredentials();
+
+      const setupComplete = !!(lastfmCreds.apiKey);
 
       res.json({
         success: true,
         data: {
+          setupComplete,
           discogs: {
             authenticated: !!settings.discogs.username,
             username: settings.discogs.username,
+            hasAppCredentials: !!discogsCreds.clientId,
           },
           lastfm: {
             authenticated: !!(
@@ -91,21 +153,20 @@ export function createAuthRouter(
     try {
       const { apiKey } = req.query;
 
-      // Use provided API key or fall back to environment variable
-      const finalApiKey = (apiKey as string) || process.env.LASTFM_API_KEY;
+      // Ensure we have an API key (from query, settings, or env)
+      let finalApiKey = apiKey as string;
+      if (!finalApiKey) {
+        const creds = await authService.getLastFmCredentials();
+        finalApiKey = creds.apiKey || '';
+      }
 
       if (!finalApiKey) {
         return res.status(400).json({
           success: false,
           error:
-            'API key is required (either provide one or set LASTFM_API_KEY environment variable)',
+            'API key is required. Please complete initial setup or provide LASTFM_API_KEY.',
         });
       }
-
-      // Save API key
-      const settings = await authService.getUserSettings();
-      settings.lastfm.apiKey = finalApiKey;
-      await authService.saveUserSettings(settings);
 
       const authUrl = await lastfmService.getAuthUrl();
 

@@ -113,7 +113,7 @@ export class LastFmService {
         throw new Error('Last.fm API key not configured');
       }
 
-      const secret = process.env.LASTFM_SECRET || '';
+      const secret = credentials.apiSecret || '';
       this.logger.debug('Last.fm secret check', {
         secret: secret ? 'present' : 'missing',
       });
@@ -189,9 +189,9 @@ export class LastFmService {
         sessionKey: credentials.sessionKey ? 'present' : 'missing',
       });
 
-      const secret = process.env.LASTFM_SECRET || '';
+      const secret = credentials.apiSecret || '';
       if (!secret) {
-        this.logger.error('LASTFM_SECRET environment variable is not set');
+        this.logger.error('Last.fm API secret not configured');
         throw new Error('Last.fm API secret not configured');
       }
 
@@ -521,12 +521,12 @@ export class LastFmService {
         };
       }
 
-      const secret = process.env.LASTFM_SECRET || '';
+      const secret = credentials.apiSecret || '';
       if (!secret) {
         return {
           success: false,
           message:
-            'Last.fm API secret not configured. Please check your environment variables.',
+            'Last.fm API secret not configured. Please check your setup.',
         };
       }
 
