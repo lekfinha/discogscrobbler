@@ -23,6 +23,22 @@ A modern web application that bridges your Discogs collection with Last.fm scrob
 
 ## Quick Start
 
+### Option 1: Docker (Recommended)
+
+The easiest way to get started is using Docker Compose. This runs both the frontend and backend in a single container.
+
+1. **Install Docker and Docker Compose**
+2. **Run**:
+   ```bash
+   git clone https://github.com/lekfinha/discogscrobbler/
+   cd discogscrobbler
+   sudo docker-compose up -d
+   ```
+3. **Open Browser**: Navigate to `http://localhost:3001`
+4. **Initial Setup**: Follow the on-screen Setup wizard to connect Discogs + Last.fm and securely save your API keys.
+
+### Option 2: Local Development Setup
+
 1. **Install**:
    ```bash
    git clone https://github.com/lekfinha/discogscrobbler/
@@ -30,35 +46,25 @@ A modern web application that bridges your Discogs collection with Last.fm scrob
    npm install
    ```
 
-2. **Configure `.env`**: Copy `.env.example` to `.env` and fill in the required values (see **Configuration** below).
+2. **Configure `.env`**: Copy `.env.example` to `.env`. The application generates an encryption key automatically on first run, but you can set custom ports here if needed.
 
 3. **Run (dev)**:
    ```bash
    npm run dev:app
    ```
 
-4. **Open Browser**: Navigate to `http://localhost:8080`
-
-5. **Authenticate & Scrobble**: Use **Setup & Authentication** in the UI to connect Discogs + Last.fm, then start scrobbling.
+4. **Open Browser**: Navigate to `http://localhost:8080` (or `http://localhost:3001` in production mode).
+5. **Initial Setup**: Follow the on-screen Setup wizard to connect your accounts.
 
 ## Prerequisites
 
-- **Node.js 18+** and npm
+- **Docker** OR **Node.js 18+** and npm
 - **Discogs account** with API access
 - **Last.fm account** with API access
 
-## API Setup
+## API Setup (via In-App Wizard)
 
-### Discogs API (Required)
-1. Go to [Discogs Settings → Developers](https://www.discogs.com/settings/developers)
-2. Click "Create an Application"
-3. Fill in:
-   - **Name**: "Discogs to Last.fm Scrobbler"
-   - **Description**: "Web app for scrobbling Discogs collection to Last.fm"
-   - **Callback URL**: `http://localhost:3001/api/v1/auth/discogs/callback`
-4. Save your **Consumer Key** and **Consumer Secret**
-
-**Alternative (no app creation):** You can use a **Discogs Personal Access Token** instead. Generate one from the same Discogs developer settings page and enter it in the in-app **Setup & Authentication** page.
+When you first open the application, an interactive wizard will guide you through setting up your API keys. Your keys are securely encrypted at rest inside the `data/` directory. 
 
 ### Last.fm API (Required)
 1. Visit [Last.fm API Account Creation](https://www.last.fm/api/account/create)
@@ -66,26 +72,28 @@ A modern web application that bridges your Discogs collection with Last.fm scrob
    - **Application Name**: "Discogs to Last.fm Scrobbler"
    - **Description**: "Web app for scrobbling Discogs collection"
    - **Callback URL**: `http://localhost:3001/api/v1/auth/lastfm/callback`
-3. Save your **API Key** and **Shared Secret**
+3. Paste your **API Key** and **Shared Secret** into the app's setup wizard.
+
+### Discogs API (Optional)
+To increase your rate limit and download large collections faster, you can create a Discogs app:
+1. Go to [Discogs Settings → Developers](https://www.discogs.com/settings/developers)
+2. Click "Create an Application"
+3. Fill in:
+   - **Name**: "Discogs to Last.fm Scrobbler"
+   - **Description**: "Web app for scrobbling Discogs collection to Last.fm"
+   - **Callback URL**: `http://localhost:3001/api/v1/auth/discogs/callback`
+4. Paste your **Consumer Key** and **Consumer Secret** into the app's setup wizard.
+
+> You can also skip the Discogs API setup and simply connect with your username, or use a Personal Access Token later in the Settings menu.
 
 ## Configuration (.env)
 
-Create a `.env` file in the project root (it is ignored by git). You can start from `.env.example`.
-
-### Required
-- `ENCRYPTION_KEY`: used to encrypt stored credentials at rest (must be **32+ characters**). Generate one:
-  ```bash
-  node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-  ```
-- `LASTFM_API_KEY` and `LASTFM_SECRET`: from your Last.fm API app
-- Discogs (choose one):
-  - **OAuth (recommended)**: `DISCOGS_CLIENT_ID` + `DISCOGS_CLIENT_SECRET`
-  - **Personal Access Token**: use the in-app Setup flow (no Discogs app required)
+A `.env` file is **optional** since the app automatically manages encryption keys and settings through the UI. However, you can create a `.env` file in the project root to override defaults.
 
 ### Optional
 - `BACKEND_PORT` (default `3001`)
 - `FRONTEND_PORT` (default `8080`, dev server only)
-- `HOST` (default `127.0.0.1`)
+- `HOST` (default `127.0.0.1` locally, `0.0.0.0` in Docker)
 - `DISCOGS_CALLBACK_URL` / `LASTFM_CALLBACK_URL` (if you need custom callback URLs)
 - `FRONTEND_URL` (additional allowed origin for CORS)
 
@@ -93,18 +101,20 @@ Create a `.env` file in the project root (it is ignored by git). You can start f
 
 ## 🏃‍♂️ Running the App
 
-### Development Mode (Recommended)
+### Docker (Production Mode)
+```bash
+sudo docker-compose up -d
+```
+- Access the app at `http://localhost:3001`
+- Persistent data is stored in the `./data` directory mapped to the container.
+
+### Development Mode
 ```bash
 npm run dev:app
 ```
 - Backend: `http://localhost:3001`
 - Frontend: `http://localhost:8080`
 - Auto-opens browser with hot reload
-
-### Production Mode
-```bash
-npm run start:web
-```
 
 ## Features
 
